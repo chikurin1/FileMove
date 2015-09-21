@@ -789,7 +789,8 @@ Public Class FileMoveForm
     'Hamana起動
     Private Sub picThumbs_DoubleClick(sender As Object, e As System.EventArgs) Handles picThumbs.DoubleClick
 
-        Process.Start("C:\ProgramData\Hamana\Hamana.exe", """" & sFilePath & """")
+        Process.Start("C:\ProgramData\leeyes\Leeyes.exe", """" & sFilePath & """")
+        'Process.Start("C:\ProgramData\Hamana\Hamana.exe", """" & sFilePath & """")
 
     End Sub
 
@@ -817,6 +818,9 @@ Public Class FileMoveForm
 
         If (iNowFolder < 1) Then
             MsgBox("親フォルダが選択されていません。")
+            Exit Sub
+        ElseIf (iNowFolder < 9) Then
+            MsgBox("ルートフォルダに移動できません")
             Exit Sub
         End If
 
@@ -950,6 +954,11 @@ Public Class FileMoveForm
         If (iNowFolder < 1) Then
             MsgBox("フォルダが選択されていません")
             Exit Sub
+        ElseIf (iNowFolder < 9) Then
+            MsgBox("ルートフォルダは削除できません")
+            Exit Sub
+        ElseIf (MsgBox("フォルダを削除しますか？" & vbCrLf & vbCrLf & sFilePath, vbYesNo) = vbNo) Then
+            Exit Sub
         End If
 
         Dim sFolderPath As String
@@ -972,6 +981,7 @@ Public Class FileMoveForm
         Catch ex As Exception
             MsgBox(ex.Message)
         End Try
+
     End Sub
 
     'プルダウンの色を設定

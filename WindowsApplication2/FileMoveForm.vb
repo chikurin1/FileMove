@@ -737,12 +737,45 @@ Public Class FileMoveForm
             Dim cmb As ComboBox
             cmb = CType(Controls("cmbTag" & i), ComboBox)
 
-            If (cmb.SelectedValue = 1 Or cmb.SelectedValue = 2) Then
-                If (Controls("txtTag" & i).Text <> "") Then
-                    sChildFolderName = Controls("txtTag" & i).Text
-                    Exit For
-                End If
-            End If
+            Select Case iNowFolder
+                Case 1, 2, 3, 4
+                    If (cmb.SelectedValue = 1) Then
+                        If (Controls("txtTag" & i).Text <> "") Then
+                            sChildFolderName = Controls("txtTag" & i).Text
+                            Exit For
+                        End If
+                    End If
+
+                Case 5
+                    If (cmb.SelectedValue = 2) Then
+                        If (Controls("txtTag" & i).Text <> "") Then
+                            sChildFolderName = Controls("txtTag" & i).Text
+                            Exit For
+                        End If
+                    End If
+                Case 8
+                    If (cmb.SelectedValue = 2) Then
+                        If (Controls("txtTag" & i).Text <> "") Then
+                            sChildFolderName = Controls("txtTag" & i).Text
+                            Exit For
+                        End If
+                    ElseIf (cmb.SelectedValue = 0) Then
+                        If (Controls("txtTag" & i).Text <> "") Then
+                            If (MsgBox(Controls("txtTag" & i).Text & "をフォルダ名にしますか？", vbYesNo) = vbYes) Then
+                                cmb.SelectedValue = 2
+                                sChildFolderName = Controls("txtTag" & i).Text
+                                Exit For
+                            End If
+                        End If
+                    End If
+                Case Else
+                    If (cmb.SelectedValue = 1 Or cmb.SelectedValue = 2) Then
+                        If (Controls("txtTag" & i).Text <> "") Then
+                            sChildFolderName = Controls("txtTag" & i).Text
+                            Exit For
+                        End If
+                    End If
+            End Select
         Next
 
         If (sChildFolderName Is Nothing) Then

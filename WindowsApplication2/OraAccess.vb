@@ -208,15 +208,15 @@ Public Class OraAccess
 
         Dim sFilePathQuery As String = Nothing
 
-        sFilePathQuery = "SELECT A.ID, A.TITLE, C.PATH || '\' || B.PATH || '\' || A.PATH AS A ,A.FILE_SIZE ,A.THUMBNAIL ,A.RANK ,A.FOLDER_ID ,B.TITLE AS NOW_FOLDER, B.TITLE AS PARENT_TITLE " & _
-                            "FROM FILE_TBL A ,FOLDER_TBL B ,GENRE_TBL C " & _
-                            "WHERE B.GENRE_ID = C.ID And A.FOLDER_ID = B.ID And " & _
-                            "C.PATH || '\' || B.PATH || '\' || A.PATH  = :FILEPATH " & _
-                        "UNION ALL " & _
-                        "SELECT A.ID, A.TITLE, D.PATH || '\' || C.PATH || '\' || B.PATH || '\' || A.PATH AS A ,A.FILE_SIZE ,A.THUMBNAIL ,A.RANK ,A.FOLDER_ID ,B.TITLE AS NOW_FOLDER ,C.TITLE AS PARENT_TITLE " & _
-                            "FROM FILE_TBL A ,FOLDER_TBL B ,FOLDER_TBL C ,GENRE_TBL D " & _
-                            "WHERE C.GENRE_ID = D.ID AND B.PARENT_FOLDER_ID = C.ID AND A.FOLDER_ID = B.ID AND " & _
-                             "D.PATH || '\' || C.PATH || '\' || B.PATH || '\' || A.PATH = :FILEPATH"
+        sFilePathQuery = "SELECT A.ID, A.TITLE, C.PATH || '\' || B.PATH || '\' || A.PATH AS A ,A.FILE_SIZE ,A.THUMBNAIL ,A.RANK ,A.FOLDER_ID ,B.TITLE AS NOW_FOLDER, B.TITLE AS PARENT_TITLE " &
+                            "FROM FILE_TBL A ,FOLDER_TBL B ,GENRE_TBL C " &
+                            "WHERE B.GENRE_ID = C.ID And A.FOLDER_ID = B.ID And " &
+                            "C.PATH || '\' || B.PATH || '\' || A.PATH  = ':FILEPATH' " &
+                        "UNION ALL " &
+                        "SELECT A.ID, A.TITLE, D.PATH || '\' || C.PATH || '\' || B.PATH || '\' || A.PATH AS A ,A.FILE_SIZE ,A.THUMBNAIL ,A.RANK ,A.FOLDER_ID ,B.TITLE AS NOW_FOLDER ,C.TITLE AS PARENT_TITLE " &
+                            "FROM FILE_TBL A ,FOLDER_TBL B ,FOLDER_TBL C ,GENRE_TBL D " &
+                            "WHERE C.GENRE_ID = D.ID AND B.PARENT_FOLDER_ID = C.ID AND A.FOLDER_ID = B.ID AND " &
+                             "D.PATH || '\' || C.PATH || '\' || B.PATH || '\' || A.PATH = ':FILEPATH'"
 
         cmd.CommandText = sFilePathQuery
         cmd.Parameters.Clear()
@@ -418,19 +418,21 @@ Public Class OraAccess
 
     Public Function insertFolder(ByVal iParentFolderId As Integer, ByVal sName As String) As Integer
 
+        Dim sIdSeqQuery As String = "SELECT folder_tbl_seq.nextval AS ID FROM dual"
+        cmd.CommandText = sIdSeqQuery
+        Dim iFolderId As Integer = CInt(cmd.ExecuteScalar)
+
         If (iParentFolderId > 10) Then
-            Dim sFoldergQuery As String = "INSERT INTO folder_tbl VALUES (folder_tbl_seq.nextval,:FOLDER_NAME,:PATH,:GENRE_ID,:PARENT_FOLDER)"
+            Dim sFoldergQuery As String = "INSERT INTO folder_tbl VALUES (:ID,:FOLDER_NAME,:PATH,:GENRE_ID,:PARENT_FOLDER)"
             cmd.CommandText = sFoldergQuery
             cmd.Parameters.Clear()
+            cmd.Parameters.Add(New OracleParameter("ID", iFolderId))
             cmd.Parameters.Add(New OracleParameter("FOLDER_NAME", sName))
             cmd.Parameters.Add(New OracleParameter("PATH", sName))
             cmd.Parameters.Add(New OracleParameter("GENRE_ID", ""))
             cmd.Parameters.Add(New OracleParameter("PARENT_FOLDER", iParentFolderId))
             cmd.ExecuteNonQuery()
         Else
-            Dim sIdSeqQuery As String = "SELECT folder_tbl_seq.nextval AS ID FROM dual"
-            cmd.CommandText = sIdSeqQuery
-            Dim iFolderId As Integer = CInt(cmd.ExecuteScalar)
 
             Dim sFoldergQuery As String = "INSERT INTO folder_tbl VALUES (:ID,:FOLDER_NAME,:PATH,:GENRE_ID,:PARENT_FOLDER)"
             cmd.CommandText = sFoldergQuery
@@ -449,7 +451,7 @@ Public Class OraAccess
             cmd.Parameters.Add(New OracleParameter("DATA_VALUE", sName))
             cmd.ExecuteNonQuery()
         End If
-        Return 0
+        Return iFolderId
 
     End Function
 

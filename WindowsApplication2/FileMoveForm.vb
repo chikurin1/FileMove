@@ -89,7 +89,7 @@ Public Class FileMoveForm
                 For i = 0 To 5
                     tabTbl(i).AcceptChanges()
                     Dim cmb As ComboBox
-                    cmb = Controls("cmbTag" & i + 1)
+                    cmb = CType(Controls("cmbTag" & i + 1), ComboBox)
                     cmb.DataSource = tabTbl(i)
                     cmb.DisplayMember = "NAME"
                     cmb.ValueMember = "ID"
@@ -185,7 +185,7 @@ Public Class FileMoveForm
                 iSelValue = clsOraAccess.queryDefaultCategory(sValue)
 
                 Dim cmb As ComboBox
-                cmb = Controls("cmbTag" & ilistIdx)
+                cmb = CType(Controls("cmbTag" & ilistIdx), ComboBox)
                 cmb.SelectedValue = iSelValue
                 ilistIdx += 1
             Next
@@ -735,7 +735,7 @@ Public Class FileMoveForm
 
         For i = 1 To 6
             Dim cmb As ComboBox
-            cmb = Controls("cmbTag" & i)
+            cmb = CType(Controls("cmbTag" & i), ComboBox)
 
             If (cmb.SelectedValue = 1 Or cmb.SelectedValue = 2) Then
                 If (Controls("txtTag" & i).Text <> "") Then
@@ -757,19 +757,22 @@ Public Class FileMoveForm
             'フォルダの作成
             Dim sParentFolderPath As String = clsOraAccess.queryFolderPath(iNowFolder)
             System.IO.Directory.CreateDirectory(sParentFolderPath & sChildFolderName)
+            iNowFolder = clsOraAccess.insertFolder(iNowFolder, sChildFolderName)
 
-
-            clsOraAccess.insertFolder(iNowFolder, sChildFolderName)
-
-            TreeCreate(sChildFolderName)
-            If (TabControl1.SelectedTab Is TabPage2) Then
-                ImageListCreate()
-            End If
-            MessageBox.Show("追加完了しました。")
         Catch ex As Exception
             MsgBox(ex.Message)
         End Try
 
+        TreeCreate(sChildFolderName)
+        If (TabControl1.SelectedTab Is TabPage2) Then
+            ImageListCreate()
+        End If
+
+        If (MsgBox("フォルダを追加しました。続けてファイルを移動しますか？" & vbCrLf & vbCrLf & sChildFolderName, vbYesNo) = vbYes) Then
+
+            btnMove.PerformClick()
+
+        End If
     End Sub
 
     'ファイル削除（DB削除なし）
@@ -798,7 +801,7 @@ Public Class FileMoveForm
     '初期化（ファイルあり）を呼び出し、フォームに情報を表示
     Private Sub lstThumbs_DoubleClick(sender As Object, e As System.EventArgs) Handles lstThumbs.DoubleClick
 
-        sFilePath = lstImgPath(1)(lstThumbs.SelectedItems(0).Index)
+        sFilePath = CType(lstImgPath(1)(lstThumbs.SelectedItems(0).Index), String)
 
         If (bKensakuPattern = True) Then
             iNowFolder = lstImgPath(4)(lstThumbs.SelectedItems(0).Index)
@@ -957,7 +960,7 @@ Public Class FileMoveForm
         ElseIf (iNowFolder < 9) Then
             MsgBox("ルートフォルダは削除できません")
             Exit Sub
-        ElseIf (MsgBox("フォルダを削除しますか？" & vbCrLf & vbCrLf & sFilePath, vbYesNo) = vbNo) Then
+        ElseIf (MsgBox("フォルダを削除しますか？", vbYesNo) = vbNo) Then
             Exit Sub
         End If
 

@@ -57,6 +57,10 @@ Partial Class FileMoveForm
         Me.chkOver = New System.Windows.Forms.CheckBox()
         Me.btnFolderTagAdd = New System.Windows.Forms.Button()
         Me.btnFolderDel = New System.Windows.Forms.Button()
+        Me.btnNameSearch = New System.Windows.Forms.Button()
+        Me.btnTagSettinn = New System.Windows.Forms.Button()
+        Me.txtTagSetting = New System.Windows.Forms.TextBox()
+        Me.chkGoogle = New System.Windows.Forms.CheckBox()
         Me.TabControl1.SuspendLayout()
         Me.TabPage1.SuspendLayout()
         Me.TabPage2.SuspendLayout()
@@ -70,10 +74,10 @@ Partial Class FileMoveForm
             Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
         Me.TabControl1.Controls.Add(Me.TabPage1)
         Me.TabControl1.Controls.Add(Me.TabPage2)
-        Me.TabControl1.Location = New System.Drawing.Point(0, 130)
+        Me.TabControl1.Location = New System.Drawing.Point(0, 150)
         Me.TabControl1.Name = "TabControl1"
         Me.TabControl1.SelectedIndex = 0
-        Me.TabControl1.Size = New System.Drawing.Size(1003, 511)
+        Me.TabControl1.Size = New System.Drawing.Size(1003, 491)
         Me.TabControl1.TabIndex = 0
         '
         'TabPage1
@@ -82,7 +86,7 @@ Partial Class FileMoveForm
         Me.TabPage1.Location = New System.Drawing.Point(4, 22)
         Me.TabPage1.Name = "TabPage1"
         Me.TabPage1.Padding = New System.Windows.Forms.Padding(3)
-        Me.TabPage1.Size = New System.Drawing.Size(995, 485)
+        Me.TabPage1.Size = New System.Drawing.Size(995, 465)
         Me.TabPage1.TabIndex = 0
         Me.TabPage1.Text = "TabPage1"
         Me.TabPage1.UseVisualStyleBackColor = True
@@ -94,7 +98,7 @@ Partial Class FileMoveForm
         Me.treeDir.ForeColor = System.Drawing.SystemColors.WindowText
         Me.treeDir.Location = New System.Drawing.Point(3, 3)
         Me.treeDir.Name = "treeDir"
-        Me.treeDir.Size = New System.Drawing.Size(989, 479)
+        Me.treeDir.Size = New System.Drawing.Size(989, 459)
         Me.treeDir.TabIndex = 16
         '
         'TabPage2
@@ -103,7 +107,7 @@ Partial Class FileMoveForm
         Me.TabPage2.Location = New System.Drawing.Point(4, 22)
         Me.TabPage2.Name = "TabPage2"
         Me.TabPage2.Padding = New System.Windows.Forms.Padding(3)
-        Me.TabPage2.Size = New System.Drawing.Size(995, 485)
+        Me.TabPage2.Size = New System.Drawing.Size(995, 465)
         Me.TabPage2.TabIndex = 1
         Me.TabPage2.Text = "TabPage2"
         Me.TabPage2.UseVisualStyleBackColor = True
@@ -116,7 +120,7 @@ Partial Class FileMoveForm
         Me.lstThumbs.Location = New System.Drawing.Point(3, 3)
         Me.lstThumbs.Name = "lstThumbs"
         Me.lstThumbs.ShowItemToolTips = True
-        Me.lstThumbs.Size = New System.Drawing.Size(989, 479)
+        Me.lstThumbs.Size = New System.Drawing.Size(989, 459)
         Me.lstThumbs.SmallImageList = Me.ilstThumbs
         Me.lstThumbs.TabIndex = 28
         Me.lstThumbs.UseCompatibleStateImageBehavior = False
@@ -400,11 +404,49 @@ Partial Class FileMoveForm
         Me.btnFolderDel.Text = "フォルダ削除"
         Me.btnFolderDel.UseVisualStyleBackColor = True
         '
+        'btnNameSearch
+        '
+        Me.btnNameSearch.Location = New System.Drawing.Point(573, 124)
+        Me.btnNameSearch.Name = "btnNameSearch"
+        Me.btnNameSearch.Size = New System.Drawing.Size(100, 19)
+        Me.btnNameSearch.TabIndex = 28
+        Me.btnNameSearch.Text = "Google"
+        Me.btnNameSearch.UseVisualStyleBackColor = True
+        '
+        'btnTagSettinn
+        '
+        Me.btnTagSettinn.Location = New System.Drawing.Point(438, 123)
+        Me.btnTagSettinn.Name = "btnTagSettinn"
+        Me.btnTagSettinn.Size = New System.Drawing.Size(104, 19)
+        Me.btnTagSettinn.TabIndex = 29
+        Me.btnTagSettinn.Text = "タグ再設定"
+        Me.btnTagSettinn.UseVisualStyleBackColor = True
+        '
+        'txtTagSetting
+        '
+        Me.txtTagSetting.Location = New System.Drawing.Point(100, 123)
+        Me.txtTagSetting.Name = "txtTagSetting"
+        Me.txtTagSetting.Size = New System.Drawing.Size(320, 19)
+        Me.txtTagSetting.TabIndex = 30
+        '
+        'chkGoogle
+        '
+        Me.chkGoogle.AutoSize = True
+        Me.chkGoogle.Location = New System.Drawing.Point(701, 130)
+        Me.chkGoogle.Name = "chkGoogle"
+        Me.chkGoogle.Size = New System.Drawing.Size(15, 14)
+        Me.chkGoogle.TabIndex = 31
+        Me.chkGoogle.UseVisualStyleBackColor = True
+        '
         'FileMoveForm
         '
         Me.AutoScaleDimensions = New System.Drawing.SizeF(6.0!, 12.0!)
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
         Me.ClientSize = New System.Drawing.Size(1001, 635)
+        Me.Controls.Add(Me.chkGoogle)
+        Me.Controls.Add(Me.txtTagSetting)
+        Me.Controls.Add(Me.btnTagSettinn)
+        Me.Controls.Add(Me.btnNameSearch)
         Me.Controls.Add(Me.btnFolderDel)
         Me.Controls.Add(Me.btnFolderTagAdd)
         Me.Controls.Add(Me.chkOver)
@@ -478,5 +520,8 @@ Partial Class FileMoveForm
     Friend WithEvents chkOver As System.Windows.Forms.CheckBox
     Friend WithEvents btnFolderTagAdd As System.Windows.Forms.Button
     Friend WithEvents btnFolderDel As System.Windows.Forms.Button
-
+    Friend WithEvents btnNameSearch As Button
+    Friend WithEvents btnTagSettinn As Button
+    Friend WithEvents txtTagSetting As TextBox
+    Friend WithEvents chkGoogle As CheckBox
 End Class

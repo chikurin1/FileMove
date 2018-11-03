@@ -52,6 +52,24 @@
         Next cControl
     End Sub
 
+    Public Sub ClearTextBox2(ByVal hParent As Control)
+        ' hParent 内のすべてのコントロールを列挙する
+        For Each cControl As Control In hParent.Controls
+            ' 列挙したコントロールにコントロールが含まれている場合は再帰呼び出しする
+            If cControl.HasChildren Then
+                ClearTextBox2(cControl)
+            End If
+            ' コントロールの型が TextBoxBase からの派生型の場合は Text をクリアする
+
+            If TypeOf cControl Is TextBoxBase Then
+                'タグ再設定テキストボックスはクリアしない
+                If (cControl.Name <> "txtTagSetting") Then
+                    cControl.Text = String.Empty
+                End If
+            End If
+        Next cControl
+    End Sub
+
     Public Sub ClearCombotBox(ByVal hParent As Control)
         ' hParent 内のすべてのコントロールを列挙する
         For Each cControl As Control In hParent.Controls

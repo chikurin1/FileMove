@@ -5,6 +5,7 @@ Public Class FileMoveForm
 
     'DBアクセス用クラスのインスタンスを作成
     Public clsOraAccess As OraAccess
+
     Private iNowFile As Integer
     Private iNowFolder As Integer
     Public sFilePath As String = Nothing
@@ -41,6 +42,8 @@ Public Class FileMoveForm
             Next
             sFilePath = sbuf
         End If
+
+        Console.WriteLine("引数は「" & sFilePath & "」")
 
         Me.TopMost = True
         'Me.TopMost = False
@@ -158,9 +161,20 @@ Public Class FileMoveForm
         Dim thumbnail As Image
         Dim fi As System.IO.FileInfo
 
+
+        Console.WriteLine("初期化（既存ファイル無し時)")
+
         '初期化
         ClearTextBox(Me)
         ClearCombotBox(Me)
+
+        'テキストタグの右クリックメニューを無効化
+        txtTag1.ContextMenu = New ContextMenu
+        txtTag2.ContextMenu = New ContextMenu
+        txtTag3.ContextMenu = New ContextMenu
+        txtTag4.ContextMenu = New ContextMenu
+        txtTag5.ContextMenu = New ContextMenu
+        txtTag6.ContextMenu = New ContextMenu
 
         Try
             'コンストラクタでファイルパスを指定
@@ -169,6 +183,9 @@ Public Class FileMoveForm
             'ファイル名取得し、フォームに値を設定
             sFileName = clsZipOpen.FileName
             Me.txtFileName.Text = sFileName
+
+            Console.WriteLine("ファイル名" & txtFileName.Text)
+
 
             'タグ取得し、フォームに値を設定
             listTag = clsZipOpen.Tag
@@ -203,6 +220,9 @@ Public Class FileMoveForm
 
             cmbRank.SelectedIndex = iRank - 1
 
+            'ファイル名をテキストボックスに設定
+            txtTagSetting.Text = clsZipOpen.FileMei
+
             btnUpdate.Focus()
         Catch ex As Exception
             MsgBox(ex.Message)
@@ -211,6 +231,15 @@ Public Class FileMoveForm
             thumbnail = Nothing
             clsZipOpen = Nothing
         End Try
+
+
+        'googleチェックありの場合、ファイル名でgoogle検索
+        If (chkGoogle.Checked = True) Then
+            Dim sName As String = txtTagSetting.Text
+            If (sName <> "") Then
+                Process.Start("https://www.google.co.jp/search?q=" & Uri.EscapeUriString(sName.Trim))
+            End If
+        End If
 
         'txtFileName.Focus()
         TabControl1.Focus()
@@ -221,6 +250,8 @@ Public Class FileMoveForm
 
     '初期化（既存ファイルあり時）
     Private Function FormInit(ByRef readerFilePath As OracleDataReader) As String
+
+        Console.WriteLine("初期化（既存ファイルあり時）")
 
         '初期化
         ClearTextBox(Me)
@@ -309,12 +340,14 @@ Public Class FileMoveForm
 
         Dim clsZipOpen As ZipOpen
         Dim readerFileTag As OracleDataReader = Nothing
+
         Try
             'ランクを設定
             cmbRank.SelectedIndex = lstImgPath(2)(lstThumbs.SelectedItems(0).Index) - 1
 
             'コンストラクタでファイルパスを指定
             clsZipOpen = New ZipOpen(sFilePath)
+
             'イメージを取得し、フォームに設定
             Me.picThumbs.Image = clsZipOpen.Thumbs
 
@@ -425,6 +458,40 @@ Public Class FileMoveForm
         lstImgPath(4) = New ArrayList
         Try
             clsOraAccess.queryFileListKensaku(iKensakuKbn, iRank, iNowFolder, readerFileList)
+
+            While (readerFileList.Read())
+                Dim blob As OracleBlob = readerFileList.GetOracleBlob(4)
+                Dim ms As New System.IO.MemoryStream(blob.Value)
+                AddThumnail(New Bitmap(ms), readerFileList.GetValue(0), readerFileList.GetString(1), readerFileList.GetValue(3), readerFileList.GetValue(5))
+
+                lstImgPath(0).Add(readerFileList.GetValue(0))
+                lstImgPath(1).Add(readerFileList.GetString(2))
+                lstImgPath(2).Add(readerFileList.GetValue(5))
+                lstImgPath(3).Add(readerFileList.GetValue(3))
+                lstImgPath(4).Add(readerFileList.GetValue(7))
+            End While
+        Catch ex As Exception
+            MsgBox(ex.Message)
+        Finally
+            readerFileList.Close()
+        End Try
+
+    End Sub
+
+    'イメージリスト作成
+    Private Sub ImageListCreate(ByVal iKensakuKbn As Integer, ByVal iRank As Integer, ByVal sTagName As String)
+
+        TabControl1.SelectedTab = TabPage2
+
+        lstThumbs.Clear()
+        Dim readerFileList As OracleDataReader = Nothing
+        lstImgPath(0) = New ArrayList
+        lstImgPath(1) = New ArrayList
+        lstImgPath(2) = New ArrayList
+        lstImgPath(3) = New ArrayList
+        lstImgPath(4) = New ArrayList
+        Try
+            clsOraAccess.queryFileListKensaku(iKensakuKbn, iRank, sTagName, readerFileList)
 
             While (readerFileList.Read())
                 Dim blob As OracleBlob = readerFileList.GetOracleBlob(4)
@@ -677,7 +744,7 @@ Public Class FileMoveForm
                 End If
             Next
 
-            Process.Start("C:\ProgramData\UnifyZip\UnifyZip.exe", """" & sAftPath & txtFileName.Text & ".zip""")
+            Process.Start("C:\ProgramData\leeyes\Plugin\ExtractFile.exe", """" & sAftPath & txtFileName.Text & ".zip""")
 
             If (TabControl1.SelectedTab Is TabPage2) Then
                 ImageListCreate()
@@ -690,6 +757,41 @@ Public Class FileMoveForm
         Finally
         End Try
 
+    End Sub
+
+    'テキストボックス押下時のイベント
+    '右ダブルクリックを取得
+    Private Sub txtTag_MouseDown(ByVal sender As System.Object, ByVal e As System.Windows.Forms.MouseEventArgs) Handles txtTag1.MouseDown, txtTag2.MouseDown, txtTag3.MouseDown, txtTag4.MouseDown, txtTag5.MouseDown, txtTag6.MouseDown
+
+        'マウスのダブルクリックイベント
+        If e.Button = MouseButtons.Right AndAlso e.Clicks = 2 Then
+
+            Dim sChildFolderName As String = Nothing
+
+            If sender Is txtTag1 Then
+                sChildFolderName = txtTag1.Text
+            ElseIf sender Is txtTag2 Then
+                sChildFolderName = txtTag2.Text
+            ElseIf sender Is txtTag3 Then
+                sChildFolderName = txtTag3.Text
+            ElseIf sender Is txtTag4 Then
+                sChildFolderName = txtTag4.Text
+            ElseIf sender Is txtTag5 Then
+                sChildFolderName = txtTag5.Text
+            ElseIf sender Is txtTag6 Then
+                sChildFolderName = txtTag6.Text
+            End If
+
+            Dim iKensakuKbn As Integer
+            If (chkOver.Checked = True) Then
+                iKensakuKbn = 4
+            Else
+                iKensakuKbn = 3
+            End If
+
+            ImageListCreate(iKensakuKbn, cmbRank.SelectedIndex + 1, sChildFolderName)
+            TabControl1.SelectedTab = TabPage2
+        End If
     End Sub
 
     'テキストボックスをダブルクリック
@@ -841,14 +943,32 @@ Public Class FileMoveForm
             lblNowFolder.Text = "同一"
         End If
 
-        '存在チェック
+        'MsgBox("ここで同一ちぇく")
+        ''存在チェック
         'Dim readerFilePath As OracleDataReader = Nothing
-        'clsOraAccess.queryFilePath(sFilePath, readerFilePath)
+        'Try
+        '    clsOraAccess.queryFilePath(sFilePath, readerFilePath)
+
+        '    Dim sConditionValue As String = Nothing
+        '    If (readerFilePath.HasRows = False) Then
+
+        '        Dim cnt As Integer = 0
+        '        While (readerFilePath.Read())
+        '            cnt = cnt + 1
+        '            Exit While
+        '        End While
+        '        MsgBox(cnt)
+
+        '    End If
+        'Catch ex As Exception
+        '    MsgBox(ex.Message)
+        'End Try
+
 
         FormInit(sFilePath)
     End Sub
 
-    '更新ボタン
+    '更新ボタン　クリック
     '登録ファイルを移動して、ファイルTBL、ファイルタグTBLを更新
     Private Sub btnUpdate_Click(sender As System.Object, e As System.EventArgs) Handles btnUpdate.Click
 
@@ -929,6 +1049,7 @@ Public Class FileMoveForm
         Me.txtFileName.SelectAll()
     End Sub
 
+    'ランク順ボタンクリック
     Private Sub btnRankSearch_Click(sender As System.Object, e As System.EventArgs) Handles btnRankSearch.Click
 
         '検索フラグをオン
@@ -949,14 +1070,16 @@ Public Class FileMoveForm
         ImageListCreate(iKensakuKbn, cmbRank.SelectedIndex + 1)
     End Sub
 
+    '更新日順ボタンクリック
     Private Sub btnAddDaySearch_Click(sender As System.Object, e As System.EventArgs) Handles btnAddDaySearch.Click
 
         '検索フラグをオン
         bKensakuPattern = True
 
-        ImageListCreate(0, 0)
+        ImageListCreate(0, cmbRank.SelectedIndex + 1)
     End Sub
 
+    'タグ追加 ボタンクリック
     Private Sub btnFolderTagUpdate_Click(sender As System.Object, e As System.EventArgs) Handles btnFolderTagAdd.Click
 
         If (iNowFolder < 1) Then
@@ -985,6 +1108,7 @@ Public Class FileMoveForm
         End Try
     End Sub
 
+    'フォルダ削除クリック
     Private Sub btnFolderDel_Click(sender As System.Object, e As System.EventArgs) Handles btnFolderDel.Click
 
         If (iNowFolder < 1) Then
@@ -1103,4 +1227,123 @@ Public Class FileMoveForm
         End Select
     End Sub
 
+
+    'クリップボード取得
+    Private Sub GetClipboardText()
+        Dim clipboardText As String = ""
+        clipboardText = Clipboard.GetText()
+        Console.WriteLine(clipboardText)
+    End Sub
+
+    Private viewer As MyClipboardViewer
+
+    Public Sub New()
+        viewer = New MyClipboardViewer(Me)
+        ' イベントハンドラを登録
+        AddHandler viewer.ClipboardHandler, AddressOf OnClipBoardChanged
+
+        ' この呼び出しは、Windows フォーム デザイナで必要です。
+        InitializeComponent()
+    End Sub
+
+    ' クリップボードにテキストがコピーされると呼び出される
+    Private Sub OnClipBoardChanged(ByVal sender As Object, ByVal args As ClipboardEventArgs)
+
+        txtTagSetting.Text = Trim(args.Text)
+
+        'googleにチェックがある場合、タグセットボタンイベントを呼び出し
+        If (chkGoogle.Checked = True) Then
+            If (txtTagSetting.Text <> "") Then
+                btnTagSettinn.PerformClick()
+            End If
+        End If
+
+    End Sub
+
+    'googleボタンクリック
+    Private Sub btnNameSearch_Click(sender As Object, e As EventArgs) Handles btnNameSearch.Click
+        Dim sName As String = txtTagSetting.Text
+        If (sName <> "") Then
+            Process.Start("https://www.google.co.jp/search?q=" & Uri.EscapeUriString(sName.Trim))
+        End If
+    End Sub
+
+    'タグ再設定テキストダブルクリック
+    Private Sub txtTagSetting_DoubleClick(sender As Object, e As EventArgs) Handles txtTagSetting.DoubleClick
+        Dim sName As String = txtTagSetting.Text
+        If (sName <> "") Then
+            Process.Start("https://www.google.co.jp/search?q=" & Uri.EscapeUriString(sName.Trim))
+        End If
+
+    End Sub
+
+
+    'タグ再設定ボタンクリック
+    Private Sub btnTagSettinn_Click(sender As Object, e As EventArgs) Handles btnTagSettinn.Click
+
+        '＊＊＊フォーム生成＊＊＊
+        'ファイルパスで指定されたZIP書庫を展開し、
+        'フォルダ名、サムネイル、タグを取得
+
+        Dim clsZipOpen As ZipOpen
+        Dim sFileName As String
+        Dim listTag As ArrayList
+        Dim sConditionValue As String = Nothing
+        Dim befRank As Integer
+
+        Console.WriteLine("タグ再設定")
+
+        '現在のランクを保持
+        befRank = cmbRank.SelectedIndex
+
+        '初期化
+        ClearTextBox2(Me)
+        ClearCombotBox(Me)
+
+        'コンストラクタでファイルパスを指定
+        clsZipOpen = New ZipOpen()
+        clsZipOpen.tagCreate(txtTagSetting.Text)
+
+        'ファイル名取得し、フォームに値を設定
+        sFileName = clsZipOpen.FileName
+        Me.txtFileName.Text = sFileName
+
+        Console.WriteLine("ファイル名" & txtFileName.Text)
+
+
+        'タグ取得し、フォームに値を設定
+        listTag = clsZipOpen.Tag
+        Dim ilistIdx As Integer = 1
+
+        '絞込み条件をタグから取得
+        sConditionValue = Nothing
+
+        For Each sValue In listTag
+            Controls("txtTag" & ilistIdx).Text = sValue
+            sConditionValue = sValue
+
+            Dim iSelValue As Integer
+            iSelValue = clsOraAccess.queryDefaultCategory(sValue)
+
+            Dim cmb As ComboBox
+            cmb = CType(Controls("cmbTag" & ilistIdx), ComboBox)
+            cmb.SelectedValue = iSelValue
+            ilistIdx += 1
+        Next
+
+        'ランクを再設定
+        cmbRank.SelectedIndex = befRank
+
+        '＊＊＊ツリービュー作成処理＊＊＊
+        TreeCreate(sConditionValue)
+
+        'txtFileName.Focus()
+        TabControl1.Focus()
+
+    End Sub
+
+
 End Class
+
+
+

@@ -3,12 +3,18 @@
     Private sFilePath As String
     Private listTag As New ArrayList
     Private sFileName As String
+    Private sFileMei As String
     Private imgThumbs As Image
 
     Public Sub New(ByVal value As String)
         sFilePath = value
         zipWorks()
     End Sub
+
+    Public Sub New()
+
+    End Sub
+
 
     Public ReadOnly Property Thumbs() As Image
 
@@ -30,6 +36,12 @@
         End Get
     End Property
 
+
+    Public ReadOnly Property FileMei() As String
+        Get
+            Return sFileMei
+        End Get
+    End Property
 
     Private Sub zipWorks()
 
@@ -78,9 +90,10 @@
 
             End If
         Next
+
+        sFileMei = sFileName
         'ファイル名、タグを取得
         tagCreate(sFileName)
-
 
         '閉じる 
         ze = Nothing
@@ -89,8 +102,8 @@
 
 
     'ファイル名から、タグを作成
-    Private Sub tagCreate(ByVal sFileName1 As String)
-
+    Public Sub tagCreate(ByVal sFileName1 As String)
+        Console.WriteLine("tagCreate" & sFileName1)
         Dim arrayKakko As Char(,) = {{"(", ")"}, {"［", "］"}, {"（", "）"}, {"『", "』"}, {"【", "】"}, {"[", "]"}, {"「", "」"}, {"〈", "〉"}, {"《", "》"}, {"｛", "｝"}, {"{", "}"}, {"〔", "〕"}, {"〘", "〙"}, {"〚", "〛"}}
 
         'Dim listTag As New ArrayList
@@ -135,7 +148,7 @@
                     iColumn = -1
                     bFlag = False
                 End If
-                End If
+            End If
         Next
         If (bFlag = True) Then
             If (iColumn = -1) Then

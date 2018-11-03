@@ -154,18 +154,20 @@ Public Class OraAccess
         Select Case iKensakuKbn
 
             Case 0
-                '最新更新日　上位100件を取得
-                sFileListQuery = _
-                    "SELECT * FROM (SELECT A.ID, A.TITLE, C.PATH || '\' || B.PATH || '\' || A.PATH AS A ,A.FILE_SIZE ,A.THUMBNAIL ,A.RANK ,A.ADD_DATE ,A.FOLDER_ID " & _
-                    "FROM FILE_TBL A ,FOLDER_TBL B ,GENRE_TBL C " & _
-                    "WHERE B.GENRE_ID = C.ID AND A.FOLDER_ID = B.ID " & _
-                    "UNION ALL " & _
-                    "SELECT A.ID, A.TITLE, D.PATH || '\' || C.PATH || '\' || B.PATH || '\' || A.PATH AS A ,A.FILE_SIZE ,A.THUMBNAIL ,A.RANK ,A.ADD_DATE ,A.FOLDER_ID " & _
-                    "FROM FILE_TBL A ,FOLDER_TBL B ,FOLDER_TBL C ,GENRE_TBL D " & _
-                    "WHERE C.GENRE_ID = D.ID AND B.PARENT_FOLDER_ID = C.ID AND A.FOLDER_ID = B.ID " & _
-                    "ORDER BY ADD_DATE DESC )WHERE ROWNUM <= 100"
+                '最新更新日　上位200件を取得
+                sFileListQuery =
+                    "SELECT * FROM (SELECT A.ID, A.TITLE, C.PATH || '\' || B.PATH || '\' || A.PATH AS A ,A.FILE_SIZE ,A.THUMBNAIL ,A.RANK ,A.ADD_DATE ,A.FOLDER_ID " &
+                    "FROM FILE_TBL A ,FOLDER_TBL B ,GENRE_TBL C " &
+                    "WHERE B.GENRE_ID = C.ID AND A.FOLDER_ID = B.ID " &
+                    "AND A.RANK >= " & iRank & " " &
+                    "UNION ALL " &
+                    "SELECT A.ID, A.TITLE, D.PATH || '\' || C.PATH || '\' || B.PATH || '\' || A.PATH AS A ,A.FILE_SIZE ,A.THUMBNAIL ,A.RANK ,A.ADD_DATE ,A.FOLDER_ID " &
+                    "FROM FILE_TBL A ,FOLDER_TBL B ,FOLDER_TBL C ,GENRE_TBL D " &
+                    "WHERE C.GENRE_ID = D.ID AND B.PARENT_FOLDER_ID = C.ID AND A.FOLDER_ID = B.ID " &
+                    "AND A.RANK >= " & iRank & " " &
+                    "ORDER BY ADD_DATE DESC )WHERE ROWNUM <= 200"
             Case 1
-                '最新更新日　上位100件を取得
+                'フォルダ検索　ランクと一致
                 sFileListQuery = _
                     "SELECT A.ID, A.TITLE, C.PATH || '\' || B.PATH || '\' || A.PATH AS A ,A.FILE_SIZE ,A.THUMBNAIL ,A.RANK ,A.ADD_DATE ,A.FOLDER_ID " & _
                     "FROM FILE_TBL A ,FOLDER_TBL B ,GENRE_TBL C " & _
@@ -180,7 +182,7 @@ Public Class OraAccess
                     "AND (B.ID = " & iFolderId & " OR C.ID = " & iFolderId & " OR D.ID = " & iFolderId & ") " & _
                     "ORDER BY RANK DESC"
             Case 2
-                '最新更新日　上位100件を取得
+                'フォルダ検索　ランク以下
                 sFileListQuery = _
                     "SELECT A.ID, A.TITLE, C.PATH || '\' || B.PATH || '\' || A.PATH AS A ,A.FILE_SIZE ,A.THUMBNAIL ,A.RANK ,A.ADD_DATE ,A.FOLDER_ID " & _
                     "FROM FILE_TBL A ,FOLDER_TBL B ,GENRE_TBL C " & _
@@ -196,6 +198,82 @@ Public Class OraAccess
                     "ORDER BY RANK DESC"
         End Select
 
+        Console.WriteLine(sFileListQuery)
+        cmd.CommandText = sFileListQuery
+
+        reader = cmd.ExecuteReader()
+
+        Return 0
+
+    End Function
+
+    Public Function queryFileListKensaku(ByVal iKensakuKbn As Integer, ByVal iRank As Integer, ByVal sTagName As String, ByRef reader As OracleDataReader) As Integer
+
+        Dim sFileListQuery As String = Nothing
+
+        Select Case iKensakuKbn
+
+            Case 3
+                'ファイルタグ、またはフォルダタグ、またはフォルダ名が前方一致、かつランクが一致した、ファイルIDを返却する
+                sFileListQuery =
+                    "WITH tmp AS( " &
+                    "SELECT A.ID  " &
+                    "FROM FILE_TBL A ,FILETAG_TBL E " &
+                    "WHERE A.ID = E.FILE_ID " &
+                    "AND (E.DATA LIKE '" & sTagName & "%') " &
+                    "AND A.RANK = " & iRank & " " &
+                    "UNION " &
+                    "SELECT A.ID " &
+                    "FROM FILE_TBL A ,FOLDER_TBL B ,FOLDER_TBL C ,FOLDER_TAG_TBL F " &
+                    "WHERE B.PARENT_FOLDER_ID = C.ID AND A.FOLDER_ID = B.ID AND F.FOLDER_ID = C.ID " &
+                    "AND (F.DATA LIKE '" & sTagName & "%' OR C.TITLE LIKE '" & sTagName & "%') " &
+                    "AND A.RANK = " & iRank & " " &
+                    "UNION " &
+                    "SELECT A.ID " &
+                    "FROM FILE_TBL A ,FOLDER_TBL B ,FOLDER_TAG_TBL F " &
+                    "WHERE A.FOLDER_ID = B.ID AND F.FOLDER_ID = B.ID " &
+                    "AND (F.DATA LIKE '" & sTagName & "%' OR B.TITLE LIKE '" & sTagName & "%') " &
+                    "AND A.RANK = " & iRank & ") " &
+                    "SELECT A.ID, A.TITLE, C.PATH || '\' || B.PATH || '\' || A.PATH AS A ,A.FILE_SIZE ,A.THUMBNAIL ,A.RANK ,A.ADD_DATE ,A.FOLDER_ID " &
+                    "FROM FILE_TBL A ,FOLDER_TBL B ,GENRE_TBL C ,tmp T " &
+                    "WHERE B.GENRE_ID = C.ID AND A.FOLDER_ID = B.ID AND A.ID IN T.ID " &
+                    "UNION ALL " &
+                    "SELECT A.ID, A.TITLE, D.PATH || '\' || C.PATH || '\' || B.PATH || '\' || A.PATH AS A ,A.FILE_SIZE ,A.THUMBNAIL ,A.RANK ,A.ADD_DATE ,A.FOLDER_ID " &
+                    "FROM FILE_TBL A ,FOLDER_TBL B ,FOLDER_TBL C ,GENRE_TBL D ,tmp T " &
+                    "WHERE C.GENRE_ID = D.ID AND B.PARENT_FOLDER_ID = C.ID AND A.FOLDER_ID = B.ID AND A.ID IN T.ID " &
+                    "ORDER BY RANK DESC"
+            Case 4
+                'ファイルタグ、またはフォルダタグ、またはフォルダ名が前方一致、かつランクがパラメータ以下の、ファイルIDを返却する
+                sFileListQuery =
+                    "WITH tmp AS( " &
+                    "SELECT A.ID  " &
+                    "FROM FILE_TBL A ,FILETAG_TBL E " &
+                    "WHERE A.ID = E.FILE_ID " &
+                    "AND (E.DATA LIKE '" & sTagName & "%') " &
+                    "AND A.RANK >= " & iRank & " " &
+                    "UNION " &
+                    "SELECT A.ID " &
+                    "FROM FILE_TBL A ,FOLDER_TBL B ,FOLDER_TBL C ,FOLDER_TAG_TBL F " &
+                    "WHERE B.PARENT_FOLDER_ID = C.ID AND A.FOLDER_ID = B.ID AND F.FOLDER_ID = C.ID " &
+                    "AND (F.DATA LIKE '" & sTagName & "%' OR C.TITLE LIKE '" & sTagName & "%') " &
+                    "AND A.RANK >= " & iRank & " " &
+                    "UNION " &
+                    "SELECT A.ID " &
+                    "FROM FILE_TBL A ,FOLDER_TBL B ,FOLDER_TAG_TBL F " &
+                    "WHERE A.FOLDER_ID = B.ID AND F.FOLDER_ID = B.ID " &
+                    "AND (F.DATA LIKE '" & sTagName & "%' OR B.TITLE LIKE '" & sTagName & "%') " &
+                    "AND A.RANK >= " & iRank & ") " &
+                    "SELECT A.ID, A.TITLE, C.PATH || '\' || B.PATH || '\' || A.PATH AS A ,A.FILE_SIZE ,A.THUMBNAIL ,A.RANK ,A.ADD_DATE ,A.FOLDER_ID " &
+                    "FROM FILE_TBL A ,FOLDER_TBL B ,GENRE_TBL C ,tmp T " &
+                    "WHERE B.GENRE_ID = C.ID AND A.FOLDER_ID = B.ID AND A.ID IN T.ID " &
+                    "UNION ALL " &
+                    "SELECT A.ID, A.TITLE, D.PATH || '\' || C.PATH || '\' || B.PATH || '\' || A.PATH AS A ,A.FILE_SIZE ,A.THUMBNAIL ,A.RANK ,A.ADD_DATE ,A.FOLDER_ID " &
+                    "FROM FILE_TBL A ,FOLDER_TBL B ,FOLDER_TBL C ,GENRE_TBL D ,tmp T " &
+                    "WHERE C.GENRE_ID = D.ID AND B.PARENT_FOLDER_ID = C.ID AND A.FOLDER_ID = B.ID AND A.ID IN T.ID " &
+                    "ORDER BY RANK DESC"
+        End Select
+
+        Console.WriteLine(sFileListQuery)
         cmd.CommandText = sFileListQuery
 
         reader = cmd.ExecuteReader()

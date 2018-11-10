@@ -23,6 +23,7 @@ Public Class OraAccess
         cmd.Connection = cnn
     End Sub
 
+    'システム管理マスタからタグのジャンル用プルダウンリスト取得
     Public Function queryDropList(ByRef reader As OracleDataReader) As Integer
 
         Dim sDropListQuery As String = Nothing
@@ -38,6 +39,10 @@ Public Class OraAccess
 
     End Function
 
+    'ジャンルを取得
+    'sCondition　フォルダタグテーブルのフォルダ名
+    '条件なければジャンルテーブルのジャンル名、ジャンルIDの一覧を取得
+    '条件ある場合はフォルダタグテーブルのデータに一致するジャンル名、ジャンルIDの一覧を取得
     Public Function queryGenre(ByVal sCondition As String, ByRef reader As OracleDataReader) As Integer
 
         If (sCondition = "") Then
@@ -59,6 +64,10 @@ Public Class OraAccess
 
     End Function
 
+    'フォルダを取得
+    'sCondition　フォルダタグテーブルのフォルダ名
+    '条件なければフォルダテーブルのID,フォルダ名、ジャンルIDの一覧を取得
+    '条件ある場合はフォルダタグテーブルのデータに一致するフォルダテーブルのID,フォルダ名、ジャンルIDの一覧を取得
     Public Function queryFolder(ByVal sCondition As String, ByRef reader As OracleDataReader) As Integer
 
         If (sCondition = "") Then
@@ -80,6 +89,9 @@ Public Class OraAccess
 
     End Function
 
+    '子フォルダの一覧を取得
+    'sCondition　フォルダテーブルの親フォルダID
+    'フォルグテーブルのデータに一致するフォルダテーブルのID,フォルダ名の一覧を取得
     Public Function querySubFolder(ByVal sCondition As String, ByRef reader As OracleDataReader) As Integer
 
         Dim sSubFolderQuery As String = Nothing
@@ -103,6 +115,9 @@ Public Class OraAccess
 
     End Function
 
+    'フォルダ配下のファイルの一覧を取得
+    'sCondition　フォルダID
+    'フォルグテーブルのデータに一致するファイルテーブルのID,ファイル名、パス、サイズ、画像、ランク、追加日、フォルダIDの一覧を取得
     Public Function queryFileList(ByVal iCondition As Integer, ByRef reader As OracleDataReader) As Integer
 
         Dim sFileListQuery As String = Nothing
@@ -147,6 +162,11 @@ Public Class OraAccess
     End Function
 
 
+    'ファイルの一覧を取得
+    'iKensakuKbn　検索区分（0：最終更新日順、1：フォルダ検索（ランクと一致）、2：フォルダ検索（ランク以下）
+    'iRank　ランク
+    'iFolderId　フォルダID
+    '条件に一致するファイルテーブルのID,ファイル名、パス、サイズ、画像、ランク、追加日、フォルダIDの一覧を取得
     Public Function queryFileListKensaku(ByVal iKensakuKbn As Integer, ByVal iRank As Integer, ByVal iFolderId As Integer, ByRef reader As OracleDataReader) As Integer
 
         Dim sFileListQuery As String = Nothing
@@ -207,6 +227,11 @@ Public Class OraAccess
 
     End Function
 
+    'ファイルの一覧を取得
+    'iKensakuKbn　検索区分（3：フォルダ検索（ランクと一致）、4：フォルダ検索（ランク以下）
+    'iRank　ランク
+    'sTagName　タグ名
+    '条件に一致するファイルテーブルのID,ファイル名、パス、サイズ、画像、ランク、追加日、フォルダIDの一覧を取得
     Public Function queryFileListKensaku(ByVal iKensakuKbn As Integer, ByVal iRank As Integer, ByVal sTagName As String, ByRef reader As OracleDataReader) As Integer
 
         Dim sFileListQuery As String = Nothing
@@ -282,6 +307,9 @@ Public Class OraAccess
 
     End Function
 
+    'パスからファイルを取得
+    'sPath　パス
+    '条件に一致するファイルテーブルのID,ファイル名、パス、サイズ、画像、ランク、追加日、フォルダIDの一覧を取得
     Public Function queryFilePath(ByVal sPath As String, ByRef reader As OracleDataReader) As Integer
 
         Dim sFilePathQuery As String = Nothing
@@ -305,6 +333,10 @@ Public Class OraAccess
 
     End Function
 
+    'フォルダIDからフォルダのパスを取得
+    'iFolderId フォルダID
+    '条件に一致するフォルダテーブル、ジャンルテーブルのパスを取得
+    'フォルダIDが10以下の場合、ジャンルテーブルのパスを取得
     Public Function queryFolderPath(ByVal iFolderId As Integer) As String
 
         Dim sFolderPathQuery As String = Nothing
@@ -328,6 +360,9 @@ Public Class OraAccess
 
     End Function
 
+    'ファイルIDから、ファイルタグの一覧を取得
+    'iFileId ファイルID
+    '条件に一致するファイルタグテーブルのカテゴリ、タグ名を取得
     Public Function queryFileTag(ByVal iFileId As Integer, ByRef reader As OracleDataReader) As String
 
         Dim syFileTagQuery As String = Nothing
@@ -342,24 +377,27 @@ Public Class OraAccess
 
     End Function
 
-
-    Public Function queryDefaultCategory(ByVal sCategory As String) As Integer
+    'ファイルタグ名に一番多く登録されているカテゴリを取得
+    'sTagName　ファイルタグ名
+    'ファイルタグ名からファイルタグ名を検索し、最大のカテゴリを返却
+    Public Function queryDefaultCategory(ByVal sTagName As String) As Integer
 
         Dim sDefaultCategoryQuery As String = Nothing
 
 
-        sDefaultCategoryQuery = "SELECT * FROM (SELECT category FROM filetag_tbl " & _
-            "WHERE data = :CATEGORY_NAME " & _
+        sDefaultCategoryQuery = "SELECT * FROM (SELECT category FROM filetag_tbl " &
+            "WHERE data = :TAG_NAME " &
             "GROUP BY category ORDER BY COUNT(category) DESC) WHERE rownum = 1"
 
         cmd.Parameters.Clear()
-        cmd.Parameters.Add(New OracleParameter("CATEGORY_NAME", sCategory))
+        cmd.Parameters.Add(New OracleParameter("TAG_NAME", sTagName))
         cmd.CommandText = sDefaultCategoryQuery
 
         Return cmd.ExecuteScalar()
 
     End Function
 
+    'ファイルの追加
     Public Function insertFile(ByVal sTitle As String, ByVal sPath As String, ByVal iFolderId As Integer, ByVal lFileSize As Long, ByVal iRank As Integer, ByRef imgPic As Image) As Integer
 
         Dim sFileQuery As String = Nothing
@@ -391,6 +429,13 @@ Public Class OraAccess
 
     End Function
 
+    'ファイルの更新
+    'iFileId　ファイルID
+    'iFolderId フォルダID
+    'stitle　ファイル名
+    'sPath　パス
+    'iRank ランク
+    'imgPic　サムネイル
     Public Function updateFile(ByVal iFileId As Integer, ByVal iFolderId As Integer, ByVal stitle As String, ByVal sPath As String, ByVal iRank As Integer, ByRef imgPic As Image) As Integer
 
         Dim sFileQuery As String = Nothing
@@ -420,6 +465,10 @@ Public Class OraAccess
 
     End Function
 
+
+    'ファイルの更新（サムネイル）
+    'iId　ファイルID
+    'imgPic　サムネイル
     Public Function updateFile(ByVal iId As Integer, ByRef imgPic As Image) As Integer
 
         Dim sFileQuery As String = Nothing
@@ -441,6 +490,8 @@ Public Class OraAccess
 
     End Function
 
+    'ファイルの削除。削除するファイルのファイルタグも削除する
+    'iFileId　ファイルID
     Public Function deleteFile(ByVal iFileId As Integer) As String
 
         Dim sFileQuery As String = Nothing
@@ -462,7 +513,9 @@ Public Class OraAccess
 
     End Function
 
-
+    'ファイルタグの追加(これ使ってる？？？）
+    'iCategory カテゴリ
+    'sData 　ファイルタグ名
     Public Function insertFileTag(ByVal iCategory As Integer, ByVal sData As String) As Integer
 
         Dim sFileTagQuery As String = Nothing
@@ -480,7 +533,8 @@ Public Class OraAccess
 
     End Function
 
-
+    'ファイルIDからファイルタグの削除
+    'iFileId ファイルID
     Public Function deleteFileTag(ByVal iFileId As Integer) As String
 
         Dim sFileTagQuery As String = Nothing
@@ -494,6 +548,9 @@ Public Class OraAccess
 
     End Function
 
+    'フォルダの追加。フォルダタグテーブルへの追加もする。
+    'iParentFolderId 親フォルダID
+    'sName　フォルダ名
     Public Function insertFolder(ByVal iParentFolderId As Integer, ByVal sName As String) As Integer
 
         Dim sIdSeqQuery As String = "SELECT folder_tbl_seq.nextval AS ID FROM dual"
@@ -533,6 +590,8 @@ Public Class OraAccess
 
     End Function
 
+    'フォルダの削除。フォルダタグテーブルの削除もする
+    'iFolderId　フォルダID
     Public Function deleteFolder(ByVal iFolderId As Integer) As Integer
 
         Dim sFolderTagQuery As String = Nothing
@@ -552,6 +611,9 @@ Public Class OraAccess
         Return 0
     End Function
 
+    'フォルダタグの追加（カテゴリがなぜか1固定）
+    'iFolderId　ファルダID
+    'sName　フォルダタグ名
     Public Function insertFolderTag(ByVal iFolderId As Integer, ByVal sName As String) As Integer
 
         Dim sFoldergTagQuery As String = "INSERT INTO folder_tag_tbl VALUES (folder_tag_seq.nextval,:FOLDER_ID,1,:DATA_VALUE,'')"

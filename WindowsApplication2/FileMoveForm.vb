@@ -237,7 +237,9 @@ Public Class FileMoveForm
         If (chkGoogle.Checked = True) Then
             Dim sName As String = txtTagSetting.Text
             If (sName <> "") Then
-                Process.Start("https://www.google.co.jp/search?q=" & Uri.EscapeUriString(sName.Trim))
+                TabControl1.SelectedTab = TabPage3
+                WebBrowser1.Navigate(New Uri("https://www.google.co.jp/search?q=" & Uri.EscapeUriString(sName.Trim)))
+                'Process.Start("https://www.google.co.jp/search?q=" & Uri.EscapeUriString(sName.Trim))
             End If
         End If
 
@@ -1264,7 +1266,8 @@ Public Class FileMoveForm
     Private Sub btnNameSearch_Click(sender As Object, e As EventArgs) Handles btnNameSearch.Click
         Dim sName As String = txtTagSetting.Text
         If (sName <> "") Then
-            Process.Start("https://www.google.co.jp/search?q=" & Uri.EscapeUriString(sName.Trim))
+            TabControl1.SelectedTab = TabPage3
+            WebBrowser1.Navigate(New Uri("https://www.google.co.jp/search?q=" & Uri.EscapeUriString(sName.Trim)))
         End If
     End Sub
 
@@ -1272,7 +1275,8 @@ Public Class FileMoveForm
     Private Sub txtTagSetting_DoubleClick(sender As Object, e As EventArgs) Handles txtTagSetting.DoubleClick
         Dim sName As String = txtTagSetting.Text
         If (sName <> "") Then
-            Process.Start("https://www.google.co.jp/search?q=" & Uri.EscapeUriString(sName.Trim))
+            TabControl1.SelectedTab = TabPage3
+            WebBrowser1.Navigate(New Uri("https://www.google.co.jp/search?q=" & Uri.EscapeUriString(sName.Trim)))
         End If
 
     End Sub

@@ -61,10 +61,13 @@ Partial Class FileMoveForm
         Me.btnTagSettinn = New System.Windows.Forms.Button()
         Me.txtTagSetting = New System.Windows.Forms.TextBox()
         Me.chkGoogle = New System.Windows.Forms.CheckBox()
+        Me.TabPage3 = New System.Windows.Forms.TabPage()
+        Me.WebBrowser1 = New System.Windows.Forms.WebBrowser()
         Me.TabControl1.SuspendLayout()
         Me.TabPage1.SuspendLayout()
         Me.TabPage2.SuspendLayout()
         CType(Me.picThumbs, System.ComponentModel.ISupportInitialize).BeginInit()
+        Me.TabPage3.SuspendLayout()
         Me.SuspendLayout()
         '
         'TabControl1
@@ -74,6 +77,7 @@ Partial Class FileMoveForm
             Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
         Me.TabControl1.Controls.Add(Me.TabPage1)
         Me.TabControl1.Controls.Add(Me.TabPage2)
+        Me.TabControl1.Controls.Add(Me.TabPage3)
         Me.TabControl1.Location = New System.Drawing.Point(0, 150)
         Me.TabControl1.Name = "TabControl1"
         Me.TabControl1.SelectedIndex = 0
@@ -438,6 +442,26 @@ Partial Class FileMoveForm
         Me.chkGoogle.TabIndex = 31
         Me.chkGoogle.UseVisualStyleBackColor = True
         '
+        'TabPage3
+        '
+        Me.TabPage3.Controls.Add(Me.WebBrowser1)
+        Me.TabPage3.Location = New System.Drawing.Point(4, 22)
+        Me.TabPage3.Name = "TabPage3"
+        Me.TabPage3.Size = New System.Drawing.Size(995, 465)
+        Me.TabPage3.TabIndex = 2
+        Me.TabPage3.Text = "TabPage3"
+        Me.TabPage3.UseVisualStyleBackColor = True
+        '
+        'WebBrowser1
+        '
+        Me.WebBrowser1.Dock = System.Windows.Forms.DockStyle.Fill
+        Me.WebBrowser1.Location = New System.Drawing.Point(0, 0)
+        Me.WebBrowser1.MinimumSize = New System.Drawing.Size(20, 20)
+        Me.WebBrowser1.Name = "WebBrowser1"
+        Me.WebBrowser1.Size = New System.Drawing.Size(995, 465)
+        Me.WebBrowser1.TabIndex = 0
+        Me.WebBrowser1.Url = New System.Uri("about:blank", System.UriKind.Absolute)
+        '
         'FileMoveForm
         '
         Me.AutoScaleDimensions = New System.Drawing.SizeF(6.0!, 12.0!)
@@ -482,6 +506,7 @@ Partial Class FileMoveForm
         Me.TabPage1.ResumeLayout(False)
         Me.TabPage2.ResumeLayout(False)
         CType(Me.picThumbs, System.ComponentModel.ISupportInitialize).EndInit()
+        Me.TabPage3.ResumeLayout(False)
         Me.ResumeLayout(False)
         Me.PerformLayout()
 
@@ -524,4 +549,6 @@ Partial Class FileMoveForm
     Friend WithEvents btnTagSettinn As Button
     Friend WithEvents txtTagSetting As TextBox
     Friend WithEvents chkGoogle As CheckBox
+    Friend WithEvents TabPage3 As TabPage
+    Friend WithEvents WebBrowser1 As WebBrowser
 End Class

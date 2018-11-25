@@ -617,9 +617,9 @@ Public Class FileMoveForm
             zf = New ICSharpCode.SharpZipLib.Zip.ZipFile(sPath)
 
             'ZIP書庫を読み込む 
-            fs = New System.IO.FileStream( _
-                sPath, _
-                System.IO.FileMode.Open, _
+            fs = New System.IO.FileStream(
+                sPath,
+                System.IO.FileMode.Open,
                 System.IO.FileAccess.Read)
 
             'ZipInputStreamオブジェクトの作成

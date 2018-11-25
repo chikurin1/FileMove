@@ -27,7 +27,7 @@ Public Class OraAccess
 
         Dim sDropListQuery As String = Nothing
 
-        sDropListQuery = "select FLAG_01,KOBETU_01 from SYSTEM_KANRI_MST " & _
+        sDropListQuery = "select FLAG_01,KOBETU_01 from SYSTEM_KANRI_MST " &
                         "where KANRI_CODE='SE' AND KANRI_PG = 'FILE_CATEGORY' order by KANRI_KBN"
 
         cmd.CommandText = sDropListQuery
@@ -42,10 +42,10 @@ Public Class OraAccess
 
         If (sCondition = "") Then
 
-            sGenreQuery = "select distinct C.ID,C.TITLE from FOLDER_TBL A,FOLDER_TAG_TBL B,GENRE_TBL C " & _
+            sGenreQuery = "select distinct C.ID,C.TITLE from FOLDER_TBL A,FOLDER_TAG_TBL B,GENRE_TBL C " &
                         "WHERE C.ID = A.GENRE_ID AND B.FOLDER_ID = A.ID ORDER BY C.ID"
         Else
-            sGenreQuery = "select distinct C.ID,C.TITLE from FOLDER_TBL A,FOLDER_TAG_TBL B,GENRE_TBL C " & _
+            sGenreQuery = "select distinct C.ID,C.TITLE from FOLDER_TBL A,FOLDER_TAG_TBL B,GENRE_TBL C " &
                         "WHERE C.ID = A.GENRE_ID AND B.FOLDER_ID = A.ID AND B.DATA like :FOLDER_NAME ORDER BY C.ID"
             cmd.Parameters.Clear()
             cmd.Parameters.Add(New OracleParameter("FOLDER_NAME", sCondition & "%"))
@@ -63,10 +63,10 @@ Public Class OraAccess
 
         If (sCondition = "") Then
 
-            sFolderQuery = "select distinct A.ID,A.TITLE,A.GENRE_ID from FOLDER_TBL A,FOLDER_TAG_TBL B " & _
+            sFolderQuery = "select distinct A.ID,A.TITLE,A.GENRE_ID from FOLDER_TBL A,FOLDER_TAG_TBL B " &
                                         "WHERE B.FOLDER_ID = A.ID order by A.GENRE_ID,A.TITLE"
         Else
-            sFolderQuery = "select distinct A.ID,A.TITLE,A.GENRE_ID from FOLDER_TBL A,FOLDER_TAG_TBL B " & _
+            sFolderQuery = "select distinct A.ID,A.TITLE,A.GENRE_ID from FOLDER_TBL A,FOLDER_TAG_TBL B " &
                                         "WHERE B.FOLDER_ID = A.ID AND B.DATA like :FOLDER_NAME ORDER BY A.GENRE_ID,A.TITLE" ' ORDER BY C.ID"
             cmd.Parameters.Clear()
             cmd.Parameters.Add(New OracleParameter("FOLDER_NAME", sCondition & "%"))
@@ -88,8 +88,8 @@ Public Class OraAccess
             MessageBox.Show("パラメタが不正です。")
             Return -1
         Else
-            sSubFolderQuery = "select B.ID,B.TITLE from FOLDER_TBL A,FOLDER_TBL B " & _
-                            "WHERE B.PARENT_FOLDER_ID = A.ID AND B.PARENT_FOLDER_ID = :FOLDER_NAME " & _
+            sSubFolderQuery = "select B.ID,B.TITLE from FOLDER_TBL A,FOLDER_TBL B " &
+                            "WHERE B.PARENT_FOLDER_ID = A.ID AND B.PARENT_FOLDER_ID = :FOLDER_NAME " &
                             "ORDER BY B.TITLE"
             cmd.Parameters.Clear()
             cmd.Parameters.Add(New OracleParameter("FOLDER_NAME", sCondition))
@@ -118,14 +118,14 @@ Public Class OraAccess
         '            "A.FOLDER_ID = " & iCondition
 
         'BLOBでサムネイルを取得
-        sFileListQuery = "SELECT A.ID, A.TITLE, C.PATH || '\' || B.PATH || '\' || A.PATH AS A ,A.FILE_SIZE ,A.THUMBNAIL ,A.RANK ,A.ADD_DATE ,A.FOLDER_ID " & _
-            "FROM FILE_TBL A ,FOLDER_TBL B ,GENRE_TBL C " & _
-            "WHERE B.GENRE_ID = C.ID AND A.FOLDER_ID = B.ID AND " & _
-            "A.FOLDER_ID = " & iCondition & " " & _
-            "UNION ALL " & _
-            "SELECT A.ID, A.TITLE, D.PATH || '\' || C.PATH || '\' || B.PATH || '\' || A.PATH AS A ,A.FILE_SIZE ,A.THUMBNAIL ,A.RANK ,A.ADD_DATE ,A.FOLDER_ID " & _
-            "FROM FILE_TBL A ,FOLDER_TBL B ,FOLDER_TBL C ,GENRE_TBL D " & _
-            "WHERE C.GENRE_ID = D.ID AND B.PARENT_FOLDER_ID = C.ID AND A.FOLDER_ID = B.ID AND " & _
+        sFileListQuery = "SELECT A.ID, A.TITLE, C.PATH || '\' || B.PATH || '\' || A.PATH AS A ,A.FILE_SIZE ,A.THUMBNAIL ,A.RANK ,A.ADD_DATE ,A.FOLDER_ID " &
+            "FROM FILE_TBL A ,FOLDER_TBL B ,GENRE_TBL C " &
+            "WHERE B.GENRE_ID = C.ID AND A.FOLDER_ID = B.ID AND " &
+            "A.FOLDER_ID = " & iCondition & " " &
+            "UNION ALL " &
+            "SELECT A.ID, A.TITLE, D.PATH || '\' || C.PATH || '\' || B.PATH || '\' || A.PATH AS A ,A.FILE_SIZE ,A.THUMBNAIL ,A.RANK ,A.ADD_DATE ,A.FOLDER_ID " &
+            "FROM FILE_TBL A ,FOLDER_TBL B ,FOLDER_TBL C ,GENRE_TBL D " &
+            "WHERE C.GENRE_ID = D.ID AND B.PARENT_FOLDER_ID = C.ID AND A.FOLDER_ID = B.ID AND " &
             "A.FOLDER_ID = " & iCondition & " ORDER BY TITLE "
 
 
@@ -168,33 +168,33 @@ Public Class OraAccess
                     "ORDER BY ADD_DATE DESC )WHERE ROWNUM <= 200"
             Case 1
                 'フォルダ検索　ランクと一致
-                sFileListQuery = _
-                    "SELECT A.ID, A.TITLE, C.PATH || '\' || B.PATH || '\' || A.PATH AS A ,A.FILE_SIZE ,A.THUMBNAIL ,A.RANK ,A.ADD_DATE ,A.FOLDER_ID " & _
-                    "FROM FILE_TBL A ,FOLDER_TBL B ,GENRE_TBL C " & _
-                    "WHERE B.GENRE_ID = C.ID AND A.FOLDER_ID = B.ID " & _
-                    "AND A.RANK = " & iRank & " " & _
-                    "AND (B.ID = " & iFolderId & " OR C.ID = " & iFolderId & ") " & _
-                    "UNION ALL " & _
-                    "SELECT A.ID, A.TITLE, D.PATH || '\' || C.PATH || '\' || B.PATH || '\' || A.PATH AS A ,A.FILE_SIZE ,A.THUMBNAIL ,A.RANK ,A.ADD_DATE ,A.FOLDER_ID " & _
-                    "FROM FILE_TBL A ,FOLDER_TBL B ,FOLDER_TBL C ,GENRE_TBL D " & _
-                    "WHERE C.GENRE_ID = D.ID AND B.PARENT_FOLDER_ID = C.ID AND A.FOLDER_ID = B.ID " & _
-                    "AND A.RANK = " & iRank & " " & _
-                    "AND (B.ID = " & iFolderId & " OR C.ID = " & iFolderId & " OR D.ID = " & iFolderId & ") " & _
+                sFileListQuery =
+                    "SELECT A.ID, A.TITLE, C.PATH || '\' || B.PATH || '\' || A.PATH AS A ,A.FILE_SIZE ,A.THUMBNAIL ,A.RANK ,A.ADD_DATE ,A.FOLDER_ID " &
+                    "FROM FILE_TBL A ,FOLDER_TBL B ,GENRE_TBL C " &
+                    "WHERE B.GENRE_ID = C.ID AND A.FOLDER_ID = B.ID " &
+                    "AND A.RANK = " & iRank & " " &
+                    "AND (B.ID = " & iFolderId & " OR C.ID = " & iFolderId & ") " &
+                    "UNION ALL " &
+                    "SELECT A.ID, A.TITLE, D.PATH || '\' || C.PATH || '\' || B.PATH || '\' || A.PATH AS A ,A.FILE_SIZE ,A.THUMBNAIL ,A.RANK ,A.ADD_DATE ,A.FOLDER_ID " &
+                    "FROM FILE_TBL A ,FOLDER_TBL B ,FOLDER_TBL C ,GENRE_TBL D " &
+                    "WHERE C.GENRE_ID = D.ID AND B.PARENT_FOLDER_ID = C.ID AND A.FOLDER_ID = B.ID " &
+                    "AND A.RANK = " & iRank & " " &
+                    "AND (B.ID = " & iFolderId & " OR C.ID = " & iFolderId & " OR D.ID = " & iFolderId & ") " &
                     "ORDER BY RANK DESC"
             Case 2
                 'フォルダ検索　ランク以下
-                sFileListQuery = _
-                    "SELECT A.ID, A.TITLE, C.PATH || '\' || B.PATH || '\' || A.PATH AS A ,A.FILE_SIZE ,A.THUMBNAIL ,A.RANK ,A.ADD_DATE ,A.FOLDER_ID " & _
-                    "FROM FILE_TBL A ,FOLDER_TBL B ,GENRE_TBL C " & _
-                    "WHERE B.GENRE_ID = C.ID AND A.FOLDER_ID = B.ID " & _
-                    "AND A.RANK >= " & iRank & " " & _
-                    "AND (B.ID = " & iFolderId & " OR C.ID = " & iFolderId & ") " & _
-                    "UNION ALL " & _
-                    "SELECT A.ID, A.TITLE, D.PATH || '\' || C.PATH || '\' || B.PATH || '\' || A.PATH AS A ,A.FILE_SIZE ,A.THUMBNAIL ,A.RANK ,A.ADD_DATE ,A.FOLDER_ID " & _
-                    "FROM FILE_TBL A ,FOLDER_TBL B ,FOLDER_TBL C ,GENRE_TBL D " & _
-                    "WHERE C.GENRE_ID = D.ID AND B.PARENT_FOLDER_ID = C.ID AND A.FOLDER_ID = B.ID " & _
-                    "AND A.RANK >= " & iRank & " " & _
-                    "AND (B.ID = " & iFolderId & " OR C.ID = " & iFolderId & " OR D.ID = " & iFolderId & ") " & _
+                sFileListQuery =
+                    "SELECT A.ID, A.TITLE, C.PATH || '\' || B.PATH || '\' || A.PATH AS A ,A.FILE_SIZE ,A.THUMBNAIL ,A.RANK ,A.ADD_DATE ,A.FOLDER_ID " &
+                    "FROM FILE_TBL A ,FOLDER_TBL B ,GENRE_TBL C " &
+                    "WHERE B.GENRE_ID = C.ID AND A.FOLDER_ID = B.ID " &
+                    "AND A.RANK >= " & iRank & " " &
+                    "AND (B.ID = " & iFolderId & " OR C.ID = " & iFolderId & ") " &
+                    "UNION ALL " &
+                    "SELECT A.ID, A.TITLE, D.PATH || '\' || C.PATH || '\' || B.PATH || '\' || A.PATH AS A ,A.FILE_SIZE ,A.THUMBNAIL ,A.RANK ,A.ADD_DATE ,A.FOLDER_ID " &
+                    "FROM FILE_TBL A ,FOLDER_TBL B ,FOLDER_TBL C ,GENRE_TBL D " &
+                    "WHERE C.GENRE_ID = D.ID AND B.PARENT_FOLDER_ID = C.ID AND A.FOLDER_ID = B.ID " &
+                    "AND A.RANK >= " & iRank & " " &
+                    "AND (B.ID = " & iFolderId & " OR C.ID = " & iFolderId & " OR D.ID = " & iFolderId & ") " &
                     "ORDER BY RANK DESC"
         End Select
 
@@ -310,14 +310,14 @@ Public Class OraAccess
         Dim sFolderPathQuery As String = Nothing
 
         If (iFolderId > 10) Then
-            sFolderPathQuery = "SELECT C.PATH || '\' || B.PATH || '\' AS A " & _
-                        "FROM FOLDER_TBL B ,GENRE_TBL C " & _
-                        "WHERE B.GENRE_ID = C.ID AND " & _
-                        "B.ID = " & iFolderId & " " & _
-                        "UNION " & _
-                        "SELECT D.PATH || '\' || C.PATH || '\' || B.PATH || '\' AS A " & _
-                        "FROM FOLDER_TBL B ,FOLDER_TBL C ,GENRE_TBL D " & _
-                        "WHERE C.GENRE_ID = D.ID AND B.PARENT_FOLDER_ID = C.ID AND " & _
+            sFolderPathQuery = "SELECT C.PATH || '\' || B.PATH || '\' AS A " &
+                        "FROM FOLDER_TBL B ,GENRE_TBL C " &
+                        "WHERE B.GENRE_ID = C.ID AND " &
+                        "B.ID = " & iFolderId & " " &
+                        "UNION " &
+                        "SELECT D.PATH || '\' || C.PATH || '\' || B.PATH || '\' AS A " &
+                        "FROM FOLDER_TBL B ,FOLDER_TBL C ,GENRE_TBL D " &
+                        "WHERE C.GENRE_ID = D.ID AND B.PARENT_FOLDER_ID = C.ID AND " &
                         "B.ID = " & iFolderId
         Else
             sFolderPathQuery = "SELECT PATH || '\' AS A FROM GENRE_TBL WHERE ID = " & iFolderId
@@ -333,8 +333,8 @@ Public Class OraAccess
         Dim syFileTagQuery As String = Nothing
 
 
-        syFileTagQuery = "SELECT CATEGORY,DATA " & _
-                    "FROM FILETAG_TBL " & _
+        syFileTagQuery = "SELECT CATEGORY,DATA " &
+                    "FROM FILETAG_TBL " &
                     "WHERE FILE_ID = " & iFileId
         cmd.CommandText = syFileTagQuery
         reader = cmd.ExecuteReader()
@@ -348,8 +348,8 @@ Public Class OraAccess
         Dim sDefaultCategoryQuery As String = Nothing
 
 
-        sDefaultCategoryQuery = "SELECT * FROM (SELECT category FROM filetag_tbl " & _
-            "WHERE data = :CATEGORY_NAME " & _
+        sDefaultCategoryQuery = "SELECT * FROM (SELECT category FROM filetag_tbl " &
+            "WHERE data = :CATEGORY_NAME " &
             "GROUP BY category ORDER BY COUNT(category) DESC) WHERE rownum = 1"
 
         cmd.Parameters.Clear()
@@ -378,10 +378,10 @@ Public Class OraAccess
         cmd.Parameters.Add(New OracleParameter("FOLDER_ID", iFolderId))
         cmd.Parameters.Add(New OracleParameter("FILE_SIZE", lFileSize))
         cmd.Parameters.Add(New OracleParameter("RANK", iRank))
-        Dim pBlob As OracleParameter = _
+        Dim pBlob As OracleParameter =
                 cmd.Parameters.Add("THUMBNAIL", OracleDbType.Blob)
         Dim imgconv As New ImageConverter()
-        Dim b As Byte() = _
+        Dim b As Byte() =
             CType(imgconv.ConvertTo(imgPic, GetType(Byte())), Byte())
         pBlob.Value = b
 
@@ -404,10 +404,10 @@ Public Class OraAccess
         cmd.Parameters.Add(New OracleParameter("TITLE", stitle))
         cmd.Parameters.Add(New OracleParameter("PATH", sPath))
         cmd.Parameters.Add(New OracleParameter("RANK", iRank))
-        Dim pBlob As OracleParameter = _
+        Dim pBlob As OracleParameter =
         cmd.Parameters.Add("THUMBNAIL", OracleDbType.Blob)
         Dim imgconv As New ImageConverter()
-        Dim b As Byte() = _
+        Dim b As Byte() =
             CType(imgconv.ConvertTo(imgPic, GetType(Byte())), Byte())
         pBlob.Value = b
         cmd.Parameters.Add(New OracleParameter("FILEID", iId))
@@ -428,10 +428,10 @@ Public Class OraAccess
         cmd.CommandText = sFileQuery
         cmd.Parameters.Clear()
 
-        Dim pBlob As OracleParameter = _
+        Dim pBlob As OracleParameter =
         cmd.Parameters.Add("THUMBNAIL", OracleDbType.Blob)
         Dim imgconv As New ImageConverter()
-        Dim b As Byte() = _
+        Dim b As Byte() =
             CType(imgconv.ConvertTo(imgPic, GetType(Byte())), Byte())
         pBlob.Value = b
         cmd.Parameters.Add(New OracleParameter("FILEID", iId))

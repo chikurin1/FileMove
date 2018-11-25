@@ -105,7 +105,7 @@ Public Class FileMoveForm
             End Try
         End If
 
-        iRank = 5
+        iRank = 1
 
         '存在チェック
         Dim readerFilePath As OracleDataReader = Nothing
@@ -123,7 +123,7 @@ Public Class FileMoveForm
                 TreeCreate(sConditionValue)
 
                 If (sConditionValue = Nothing) Then
-                    cmbRank.SelectedIndex = 5
+                    cmbRank.SelectedIndex = 1
                 End If
 
             Else
@@ -218,7 +218,7 @@ Public Class FileMoveForm
             'ファイルのサイズを取得
             Me.lblFileSize.Text = ChangeFileSize(fi.Length)
 
-            cmbRank.SelectedIndex = iRank - 1
+            cmbRank.SelectedIndex = iRank
 
             'ファイル名をテキストボックスに設定
             txtTagSetting.Text = clsZipOpen.FileMei
@@ -237,7 +237,9 @@ Public Class FileMoveForm
         If (chkGoogle.Checked = True) Then
             Dim sName As String = txtTagSetting.Text
             If (sName <> "") Then
-                Process.Start("https://www.google.co.jp/search?q=" & Uri.EscapeUriString(sName.Trim))
+                TabControl1.SelectedTab = TabPage3
+                WebBrowser1.Navigate(New Uri("https://www.google.co.jp/search?q=" & Uri.EscapeUriString(sName.Trim)))
+                'Process.Start("https://www.google.co.jp/search?q=" & Uri.EscapeUriString(sName.Trim))
             End If
         End If
 
@@ -277,7 +279,7 @@ Public Class FileMoveForm
         Dim readerFileTag As OracleDataReader = Nothing
         Try
             'ランクを設定
-            cmbRank.SelectedIndex = readerFilePath.GetValue(5) - 1
+            cmbRank.SelectedIndex = readerFilePath.GetValue(5)
 
             'コンストラクタでファイルパスを指定
             clsZipOpen = New ZipOpen(sFilePath)
@@ -343,7 +345,7 @@ Public Class FileMoveForm
 
         Try
             'ランクを設定
-            cmbRank.SelectedIndex = lstImgPath(2)(lstThumbs.SelectedItems(0).Index) - 1
+            cmbRank.SelectedIndex = lstImgPath(2)(lstThumbs.SelectedItems(0).Index)
 
             'コンストラクタでファイルパスを指定
             clsZipOpen = New ZipOpen(sFilePath)
@@ -682,17 +684,15 @@ Public Class FileMoveForm
 
         'ランクにより文字背景色をかえる
         Select Case lRank
-            Case 10
-                lvi.BackColor = Color.Gold
-            Case 9
-                lvi.BackColor = Color.Silver
-            Case 8
-                lvi.BackColor = Color.Orange
-            Case 7
-                lvi.BackColor = Color.Aqua
-            Case 6
-                lvi.BackColor = Color.YellowGreen
             Case 5
+                lvi.BackColor = Color.Gold
+            Case 4
+                lvi.BackColor = Color.Silver
+            Case 3
+                lvi.BackColor = Color.Orange
+            Case 2
+                lvi.BackColor = Color.Aqua
+            Case 1
                 lvi.BackColor = Color.White
             Case Else
                 lvi.BackColor = Color.Gray
@@ -789,7 +789,7 @@ Public Class FileMoveForm
                 iKensakuKbn = 3
             End If
 
-            ImageListCreate(iKensakuKbn, cmbRank.SelectedIndex + 1, sChildFolderName)
+            ImageListCreate(iKensakuKbn, cmbRank.SelectedIndex, sChildFolderName)
             TabControl1.SelectedTab = TabPage2
         End If
     End Sub
@@ -988,7 +988,7 @@ Public Class FileMoveForm
             End If
 
             'ファイルをTBLに追加
-            clsOraAccess.updateFile(iNowFile, iNowFolder, txtFileName.Text, txtFileName.Text & ".zip", cmbRank.SelectedIndex + 1, picThumbs.Image)
+            clsOraAccess.updateFile(iNowFile, iNowFolder, txtFileName.Text, txtFileName.Text & ".zip", cmbRank.SelectedIndex, picThumbs.Image)
 
             'ファイルタグをTBLから削除
             clsOraAccess.deleteFileTag(iNowFile)
@@ -1067,7 +1067,7 @@ Public Class FileMoveForm
             iKensakuKbn = 1
         End If
 
-        ImageListCreate(iKensakuKbn, cmbRank.SelectedIndex + 1)
+        ImageListCreate(iKensakuKbn, cmbRank.SelectedIndex)
     End Sub
 
     '更新日順ボタンクリック
@@ -1076,7 +1076,7 @@ Public Class FileMoveForm
         '検索フラグをオン
         bKensakuPattern = True
 
-        ImageListCreate(0, cmbRank.SelectedIndex + 1)
+        ImageListCreate(0, cmbRank.SelectedIndex)
     End Sub
 
     'タグ追加 ボタンクリック
@@ -1168,20 +1168,34 @@ Public Class FileMoveForm
 
         Select Case TextString
 
-            Case 10
-                BackColor = Color.Gold
-            Case 9
-                BackColor = Color.Silver
-            Case 8
-                BackColor = Color.Orange
-            Case 7
-                BackColor = Color.Aqua
-            Case 6
-                BackColor = Color.YellowGreen
+
             Case 5
+                BackColor = Color.Gold
+            Case 4
+                BackColor = Color.Silver
+            Case 3
+                BackColor = Color.Orange
+            Case 2
+                BackColor = Color.Aqua
+            Case 1
                 BackColor = Color.White
             Case Else
                 BackColor = Color.Gray
+
+                'Case 10
+                '    BackColor = Color.Gold
+                'Case 9
+                '    BackColor = Color.Silver
+                'Case 8
+                '    BackColor = Color.Orange
+                'Case 7
+                '    BackColor = Color.Aqua
+                'Case 6
+                '    BackColor = Color.YellowGreen
+                'Case 5
+                '    BackColor = Color.White
+                'Case Else
+                '    BackColor = Color.Gray
         End Select
 
         e.Graphics.FillRectangle(New SolidBrush(BackColor), TextRect)
@@ -1204,26 +1218,18 @@ Public Class FileMoveForm
     Private Sub FileMoveForm_KeyUp(ByVal sender As Object, ByVal e As System.Windows.Forms.KeyEventArgs) Handles MyBase.KeyUp
 
         Select Case e.KeyCode
-            Case Keys.NumPad1
-                cmbRank.SelectedIndex = 0
-            Case Keys.NumPad2
-                cmbRank.SelectedIndex = 1
-            Case Keys.NumPad3
-                cmbRank.SelectedIndex = 2
-            Case Keys.NumPad4
-                cmbRank.SelectedIndex = 3
-            Case Keys.NumPad5
-                cmbRank.SelectedIndex = 4
-            Case Keys.NumPad6
-                cmbRank.SelectedIndex = 5
-            Case Keys.NumPad7
-                cmbRank.SelectedIndex = 6
-            Case Keys.NumPad8
-                cmbRank.SelectedIndex = 7
-            Case Keys.NumPad9
-                cmbRank.SelectedIndex = 8
             Case Keys.NumPad0
-                cmbRank.SelectedIndex = 9
+                cmbRank.SelectedIndex = 0
+            Case Keys.NumPad1
+                cmbRank.SelectedIndex = 1
+            Case Keys.NumPad2
+                cmbRank.SelectedIndex = 2
+            Case Keys.NumPad3
+                cmbRank.SelectedIndex = 3
+            Case Keys.NumPad4
+                cmbRank.SelectedIndex = 4
+            Case Keys.NumPad5
+                cmbRank.SelectedIndex = 5
         End Select
     End Sub
 
@@ -1264,7 +1270,8 @@ Public Class FileMoveForm
     Private Sub btnNameSearch_Click(sender As Object, e As EventArgs) Handles btnNameSearch.Click
         Dim sName As String = txtTagSetting.Text
         If (sName <> "") Then
-            Process.Start("https://www.google.co.jp/search?q=" & Uri.EscapeUriString(sName.Trim))
+            TabControl1.SelectedTab = TabPage3
+            WebBrowser1.Navigate(New Uri("https://www.google.co.jp/search?q=" & Uri.EscapeUriString(sName.Trim)))
         End If
     End Sub
 
@@ -1272,7 +1279,8 @@ Public Class FileMoveForm
     Private Sub txtTagSetting_DoubleClick(sender As Object, e As EventArgs) Handles txtTagSetting.DoubleClick
         Dim sName As String = txtTagSetting.Text
         If (sName <> "") Then
-            Process.Start("https://www.google.co.jp/search?q=" & Uri.EscapeUriString(sName.Trim))
+            TabControl1.SelectedTab = TabPage3
+            WebBrowser1.Navigate(New Uri("https://www.google.co.jp/search?q=" & Uri.EscapeUriString(sName.Trim)))
         End If
 
     End Sub

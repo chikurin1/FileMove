@@ -6,9 +6,17 @@
     Private sFileMei As String
     Private imgThumbs As Image
 
+    'value:zipファイル
     Public Sub New(ByVal value As String)
         sFilePath = value
         zipWorks()
+    End Sub
+
+    'value:zipファイル
+    'bm:Bookmark
+    Public Sub New(ByVal value As String, ByVal bm As String)
+        sFilePath = value
+        zipWorks(bm)
     End Sub
 
     Public Sub New()
@@ -93,7 +101,85 @@
 
         sFileMei = sFileName
         'ファイル名、タグを取得
-        tagCreate(sFileName)
+        'tagCreate(sFileName)
+
+        '閉じる 
+        ze = Nothing
+        zf.Close()
+    End Sub
+
+    Private Sub zipWorks(ByVal sBookMarkPath As String)
+
+        Dim width As Integer = 96
+        Dim height As Integer = 96
+
+        Dim bFlag As Boolean = False
+
+        Dim sBookMarkDir As String
+        Dim sBookMarkFile As String
+
+
+        Select Case sBookMarkPath.IndexOf("\")
+
+            Case -1
+                sBookMarkDir = ""
+                sBookMarkFile = sBookMarkPath
+            Case 0
+                'ないはず
+            Case Else
+                sBookMarkDir = sBookMarkPath.Substring(0, sBookMarkPath.IndexOf("\") - 1)
+                sBookMarkFile = sBookMarkPath.Substring(sBookMarkPath.IndexOf("\") + 1)
+        End Select
+
+        'ZipFileオブジェクトの作成 
+        Dim zf As New ICSharpCode.SharpZipLib.Zip.ZipFile(sFilePath)
+
+        'ZIP内のエントリを列挙
+        Dim ze As ICSharpCode.SharpZipLib.Zip.ZipEntry
+
+        For Each ze In zf
+
+            '情報を表示する 
+            If ze.IsFile Then
+
+                If ze.Name = sBookMarkFile Then
+
+                    'ファイルのとき 
+                    '閲覧するZIPエントリのStreamを取得 
+                    Dim reader As System.IO.Stream = zf.GetInputStream(ze)
+
+                    'サムネイルを作成
+                    Dim bmpThumbs As Bitmap = New Bitmap(reader)
+                    imgThumbs = createThumbnail(bmpThumbs, width, height)
+
+                    reader.Close()
+
+
+                    sFileName = sBookMarkFile
+
+                    bFlag = True
+
+                    Exit For
+                End If
+
+            ElseIf ze.IsDirectory Then
+                If (ze.Name = sBookMarkDir) Then
+                    'ディレクトリのとき 
+                    sFileName = Trim(ze.Name)
+
+                    '処理追加したいけど。
+
+                End If
+            End If
+        Next
+
+        If bFlag = False Then
+            MsgBox("ブックマークファイルが存在しません")
+            'NGを返したい
+
+        End If
+
+        sFileMei = sFileName
 
         '閉じる 
         ze = Nothing
@@ -115,13 +201,17 @@
 
         'listTag.Add(sFileName)
 
+        '1文字ずつ繰り返し
         For i = 0 To sFileName1.Length - 1
 
             If (iColumn = -1) Then
+                '括弧の配列を１つずつ繰り返し
                 For j = 0 To arrayKakko.GetLength(0) - 1
+                    '前括弧が存在した場合
                     If (arrayKakko(j, 0) = sFileName1(i)) Then
                         If (bFlag = True And iStartColumn <> i) Then
-                            Dim sbuf As String = Trim(sFileName1.Substring(iStartColumn, i - iStartColumn))
+
+                            Dim sbuf As String = Trim(ChangeKinsoku(sFileName1.Substring(iStartColumn, i - iStartColumn)))
                             If (sbuf <> "") Then
                                 sFileName = sbuf
                             End If
@@ -143,7 +233,7 @@
                 If (arrayKakko(iColumn, 1) = sFileName1(i)) Then
                     If ((Trim(sFileName1.Substring(iStartColumn, i - iStartColumn)) <> "同人誌") And
                         (Trim(sFileName1.Substring(iStartColumn, i - iStartColumn)) <> "成年コミック")) Then
-                        listTag.Add(Trim(sFileName1.Substring(iStartColumn, i - iStartColumn)))
+                        listTag.Add(Trim(ChangeKinsoku(sFileName1.Substring(iStartColumn, i - iStartColumn))))
                     End If
                     iColumn = -1
                     bFlag = False
@@ -152,15 +242,43 @@
         Next
         If (bFlag = True) Then
             If (iColumn = -1) Then
-                Dim sBuf As String = Trim(sFileName1.Substring(iStartColumn, i - iStartColumn))
+                Dim sBuf As String = Trim(ChangeKinsoku(sFileName1.Substring(iStartColumn, i - iStartColumn)))
                 If (sBuf <> "") Then
                     sFileName = sBuf
                 End If
             Else
                 iStartColumn = iStartColumn - 1
-                listTag.Add(Trim(sFileName1.Substring(iStartColumn, i - iStartColumn)))
+                listTag.Add(Trim(ChangeKinsoku(sFileName1.Substring(iStartColumn, i - iStartColumn))))
             End If
         End If
+
+        If (listTag.Count = 0) Then
+            Exit Sub
+        End If
+
+        Dim sTag As String
+        '
+        For index = 0 To listTag.Count - 1
+            iStartColumn = 0
+            sTag = listTag(index)
+            For ii = 0 To sTag.Length - 1
+                For j = 0 To arrayKakko.GetLength(0) - 1
+                    '括弧ありの場合
+                    Select Case sTag(ii)
+                        Case arrayKakko(j, 0)
+                            iStartColumn = ii
+                            Exit For
+                        Case arrayKakko(j, 1)
+                            If (iStartColumn <> 0) Then
+                                listTag(index) = Trim(ChangeKinsoku(sTag.Substring(0, iStartColumn - 1)))
+                                listTag.Add(Trim(ChangeKinsoku(sTag.Substring(iStartColumn + 1, ii - iStartColumn - 1))))
+                                Exit For
+                            End If
+                    End Select
+                Next
+            Next
+        Next
+
 
     End Sub
 

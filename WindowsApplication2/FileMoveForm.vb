@@ -13,6 +13,9 @@ Public Class FileMoveForm
     Private bFirstFlag As Boolean
     Private lstImgPath(5) As ArrayList
     Private bKensakuPattern As Boolean
+    Private imgWhite As System.Drawing.Image = System.Drawing.Image.FromFile("C:\ProgramData\NeeView\Plugin\星白.png")
+    Private imgBlack As System.Drawing.Image = System.Drawing.Image.FromFile("C:\ProgramData\NeeView\Plugin\星黒.png")
+
 
     'Private Sub FileMoveForm_Activated(sender As Object, e As System.EventArgs) Handles Me.Activated
     '    Me.TopMost = False
@@ -48,6 +51,17 @@ Public Class FileMoveForm
         Me.TopMost = True
         'Me.TopMost = False
 
+        'テキストタグの右クリックメニューを無効化
+        txtTag1.ContextMenu = New ContextMenu
+        txtTag2.ContextMenu = New ContextMenu
+        txtTag3.ContextMenu = New ContextMenu
+        txtTag4.ContextMenu = New ContextMenu
+        txtTag5.ContextMenu = New ContextMenu
+        txtTag6.ContextMenu = New ContextMenu
+        txtTag7.ContextMenu = New ContextMenu
+        txtTag8.ContextMenu = New ContextMenu
+        txtTag9.ContextMenu = New ContextMenu
+
         '検索フラグをオフ
         bKensakuPattern = False
 
@@ -59,7 +73,7 @@ Public Class FileMoveForm
 
         '＊＊＊プルダウン生成＊＊＊
         If (bFirstFlag = False) Then
-            Dim tabTbl(6) As DataTable
+            Dim tabTbl(9) As DataTable
 
             Try
                 'DBアクセス用クラスのインスタンスを作成
@@ -69,7 +83,7 @@ Public Class FileMoveForm
                 'プルダウンを取得
                 clsOraAccess.queryDropList(readerDropList)
 
-                For i = 0 To 5
+                For i = 0 To 8
                     tabTbl(i) = New DataTable
 
                     tabTbl(i).Columns.Add("ID", GetType(Integer))
@@ -78,7 +92,7 @@ Public Class FileMoveForm
 
                 While (readerDropList.Read())
 
-                    For i = 0 To 5
+                    For i = 0 To 8
                         '新規行作成
                         Dim row As DataRow = tabTbl(i).NewRow()
 
@@ -89,14 +103,28 @@ Public Class FileMoveForm
                     Next
                 End While
 
-                For i = 0 To 5
+                Dim cmb As ComboBox
+                For i = 0 To 8
                     tabTbl(i).AcceptChanges()
-                    Dim cmb As ComboBox
                     cmb = CType(Controls("cmbTag" & i + 1), ComboBox)
                     cmb.DataSource = tabTbl(i)
                     cmb.DisplayMember = "NAME"
                     cmb.ValueMember = "ID"
                 Next
+
+
+                '＊＊＊＊属性生成＊＊＊＊＊
+                ClearCheckBox(Me)
+                clsOraAccess.queryZokuseiList(10, readerDropList)
+
+                Dim ii As Integer = 1
+                Dim chk As CheckBox
+                While (readerDropList.Read())
+                    chk = CType(Controls("chkZoku" & ii), CheckBox)
+                    chk.Text = readerDropList.GetValue(0)
+                    ii = ii + 1
+                End While
+
 
             Catch ex As Exception
                 Console.WriteLine(ex.Message)
@@ -107,8 +135,30 @@ Public Class FileMoveForm
 
         iRank = 1
 
+        'コマンドライン引数のファイルがzip以外の時は処理終了
+        If sFilePath Is Nothing Then
+            Exit Sub
+        End If
+
+        Select Case System.IO.Path.GetExtension(sFilePath)
+            Case ".zip"
+
+            Case ".jpg", ".jpeg", ".png"
+
+
+            Case ".rar"
+                If MsgBox("rarファイルです。変換しますか？", vbYesNo) = vbYes Then
+                    Process.Start("C:\Users\chikurin\source\repos\ExtractFile\ExtractFile\bin\x64\Release\ExtractFile.exe", """" & sFilePath & """")
+                End If
+                Exit Sub
+            Case Else
+                Exit Sub
+        End Select
+
+
         '存在チェック
         Dim readerFilePath As OracleDataReader = Nothing
+
         Try
             clsOraAccess.queryFilePath(sFilePath, readerFilePath)
 
@@ -123,7 +173,7 @@ Public Class FileMoveForm
                 TreeCreate(sConditionValue)
 
                 If (sConditionValue = Nothing) Then
-                    cmbRank.SelectedIndex = 1
+                    RankImageChange(1)
                 End If
 
             Else
@@ -167,6 +217,7 @@ Public Class FileMoveForm
         '初期化
         ClearTextBox(Me)
         ClearCombotBox(Me)
+        ClearCheckBox(Me)
 
         'テキストタグの右クリックメニューを無効化
         txtTag1.ContextMenu = New ContextMenu
@@ -175,10 +226,13 @@ Public Class FileMoveForm
         txtTag4.ContextMenu = New ContextMenu
         txtTag5.ContextMenu = New ContextMenu
         txtTag6.ContextMenu = New ContextMenu
-
+        txtTag7.ContextMenu = New ContextMenu
+        txtTag8.ContextMenu = New ContextMenu
+        txtTag9.ContextMenu = New ContextMenu
         Try
             'コンストラクタでファイルパスを指定
             clsZipOpen = New ZipOpen(sFilePath)
+            clsZipOpen.tagCreate(clsZipOpen.FileName)
 
             'ファイル名取得し、フォームに値を設定
             sFileName = clsZipOpen.FileName
@@ -218,7 +272,7 @@ Public Class FileMoveForm
             'ファイルのサイズを取得
             Me.lblFileSize.Text = ChangeFileSize(fi.Length)
 
-            cmbRank.SelectedIndex = iRank
+            RankImageChange(iRank)
 
             'ファイル名をテキストボックスに設定
             txtTagSetting.Text = clsZipOpen.FileMei
@@ -258,6 +312,7 @@ Public Class FileMoveForm
         '初期化
         ClearTextBox(Me)
         ClearCombotBox(Me)
+        ClearCheckBox(Me)
 
         'カレントファイル、フォルダを変数に格納
         iNowFile = readerFilePath.GetValue(0)
@@ -275,33 +330,50 @@ Public Class FileMoveForm
         btnNowDel.Visible = True
         Me.AcceptButton = Me.btnUpdate
 
+        Dim i As Integer
+
         Dim clsZipOpen As ZipOpen
         Dim readerFileTag As OracleDataReader = Nothing
         Try
             'ランクを設定
-            cmbRank.SelectedIndex = readerFilePath.GetValue(5)
+            RankImageChange(readerFilePath.GetValue(5))
 
             'コンストラクタでファイルパスを指定
             clsZipOpen = New ZipOpen(sFilePath)
+            clsZipOpen.tagCreate(clsZipOpen.FileName)
+
             'イメージを取得し、フォームに設定
             Me.picThumbs.Image = clsZipOpen.Thumbs
 
             'タグ取得
             While (readerFilePath.Read())
-                clsOraAccess.queryFileTag(readerFilePath.GetValue(0), readerFileTag)
+                clsOraAccess.queryFileTag(readerFilePath.GetValue(0), 1, readerFileTag)
                 Exit While
             End While
 
             'タグを設定
             Dim ilistIdx As Integer = 1
+            Dim cmb As ComboBox
+            Dim chk As CheckBox
             While (readerFileTag.Read())
+                Dim chkFlag As Boolean = False
+                If (readerFileTag.GetValue(0) = 5) Then
+                    For i = 1 To 10
+                        chk = CType(Controls("chkZoku" & i), CheckBox)
+                        If (chk.Text = readerFileTag.GetValue(1)) Then
+                            chk.Checked = True
+                            chkFlag = True
+                            Exit For
+                        End If
+                    Next
+                End If
+                If (chkFlag = False) Then
+                    Controls("txtTag" & ilistIdx).Text = readerFileTag.GetString(1)
+                    cmb = Controls("cmbTag" & ilistIdx)
+                    cmb.SelectedValue = readerFileTag.GetValue(0)
+                    ilistIdx += 1
+                End If
 
-                Controls("txtTag" & ilistIdx).Text = readerFileTag.GetString(1)
-
-                Dim cmb As ComboBox
-                cmb = Controls("cmbTag" & ilistIdx)
-                cmb.SelectedValue = readerFileTag.GetValue(0)
-                ilistIdx += 1
             End While
             readerFileTag.Close()
 
@@ -325,14 +397,15 @@ Public Class FileMoveForm
         '初期化
         ClearTextBox(Me)
         ClearCombotBox(Me)
+        ClearCheckBox(Me)
 
         'カレントファイル、フォルダを変数に格納
-        iNowFile = lstImgPath(0)(lstThumbs.SelectedItems(0).Index)
+        iNowFile = CInt(lstImgPath(0)(lstThumbs.SelectedItems(0).Index))
 
         'パス、タイトル、ファイルサイズ設定
         Me.lblFilePath.Text = sFilePath
         Me.txtFileName.Text = lstThumbs.SelectedItems(0).Text
-        Me.lblFileSize.Text = ChangeFileSize(lstImgPath(3)(lstThumbs.SelectedItems(0).Index))
+        Me.lblFileSize.Text = CType(ChangeFileSize(lstImgPath(3)(lstThumbs.SelectedItems(0).Index)), String)
 
         btnMove.Visible = False
         btnDelete.Visible = False
@@ -345,7 +418,7 @@ Public Class FileMoveForm
 
         Try
             'ランクを設定
-            cmbRank.SelectedIndex = lstImgPath(2)(lstThumbs.SelectedItems(0).Index)
+            RankImageChange(CInt(lstImgPath(2)(lstThumbs.SelectedItems(0).Index)))
 
             'コンストラクタでファイルパスを指定
             clsZipOpen = New ZipOpen(sFilePath)
@@ -354,18 +427,31 @@ Public Class FileMoveForm
             Me.picThumbs.Image = clsZipOpen.Thumbs
 
             'タグ取得
-            clsOraAccess.queryFileTag(iNowFile, readerFileTag)
+            clsOraAccess.queryFileTag(iNowFile, 1, readerFileTag)
 
             'タグを設定
             Dim ilistIdx As Integer = 1
+            Dim cmb As ComboBox
+            Dim chk As CheckBox
             While (readerFileTag.Read())
+                Dim chkFlag As Boolean = False
+                If CInt(readerFileTag.GetValue(0)) = 5 Then
+                    For i = 1 To 10
+                        chk = CType(Controls("chkZoku" & i), CheckBox)
+                        If chk.Text = CType(readerFileTag.GetValue(1), String) Then
+                            chk.Checked = True
+                            chkFlag = True
+                            Exit For
+                        End If
+                    Next
+                End If
+                If (chkFlag = False) Then
+                    Controls("txtTag" & ilistIdx).Text = readerFileTag.GetString(1)
+                    cmb = CType(Controls("cmbTag" & ilistIdx), ComboBox)
+                    cmb.SelectedValue = readerFileTag.GetValue(0)
+                    ilistIdx += 1
+                End If
 
-                Controls("txtTag" & ilistIdx).Text = readerFileTag.GetString(1)
-
-                Dim cmb As ComboBox
-                cmb = Controls("cmbTag" & ilistIdx)
-                cmb.SelectedValue = readerFileTag.GetValue(0)
-                ilistIdx += 1
             End While
             readerFileTag.Close()
 
@@ -458,8 +544,20 @@ Public Class FileMoveForm
         lstImgPath(2) = New ArrayList
         lstImgPath(3) = New ArrayList
         lstImgPath(4) = New ArrayList
+
+        Dim lstZokusei = New List(Of String)
+
+        '属性チェックを配列に格納
+        Dim chk As CheckBox
+        For i = 1 To 10
+            chk = CType(Controls("chkZoku" & i), CheckBox)
+            If (chk.Checked = True) Then
+                lstZokusei.Add(chk.Text)
+            End If
+        Next
+
         Try
-            clsOraAccess.queryFileListKensaku(iKensakuKbn, iRank, iNowFolder, readerFileList)
+            clsOraAccess.queryFileListKensaku(iKensakuKbn, lstZokusei, iRank, iNowFolder, readerFileList)
 
             While (readerFileList.Read())
                 Dim blob As OracleBlob = readerFileList.GetOracleBlob(4)
@@ -481,7 +579,7 @@ Public Class FileMoveForm
     End Sub
 
     'イメージリスト作成
-    Private Sub ImageListCreate(ByVal iKensakuKbn As Integer, ByVal iRank As Integer, ByVal sTagName As String)
+    Private Sub ImageListCreate(ByVal iRank As Integer, ByVal sTagName As String)
 
         TabControl1.SelectedTab = TabPage2
 
@@ -492,8 +590,26 @@ Public Class FileMoveForm
         lstImgPath(2) = New ArrayList
         lstImgPath(3) = New ArrayList
         lstImgPath(4) = New ArrayList
+
+        Dim lstZokusei = New List(Of String)
+
+        '属性チェックを配列に格納
+        Dim chk As CheckBox
+        For i = 1 To 10
+            chk = CType(Controls("chkZoku" & i), CheckBox)
+            If (chk.Checked = True) Then
+                lstZokusei.Add(chk.Text)
+            End If
+        Next
+
+
+        If (sTagName = "" And lstZokusei.Count = 0) Then
+            MsgBox("からっぽ")
+            Exit Sub
+        End If
+
         Try
-            clsOraAccess.queryFileListKensaku(iKensakuKbn, iRank, sTagName, readerFileList)
+            clsOraAccess.queryFileListKensaku(lstZokusei, iRank, sTagName, readerFileList)
 
             While (readerFileList.Read())
                 Dim blob As OracleBlob = readerFileList.GetOracleBlob(4)
@@ -711,46 +827,82 @@ Public Class FileMoveForm
     'ファイルを移動し、ファイルTBL,ファイルタグTBLに新規登録
     Private Sub btnMove_Click(sender As System.Object, e As System.EventArgs) Handles btnMove.Click
 
-        If (iNowFolder < 1) Then
-            MsgBox("親フォルダが選択されていません。")
-            Exit Sub
-        End If
+        Select Case iNowFolder
+            Case 0
+                MsgBox("親フォルダが選択されていません。")
+                Exit Sub
+            Case 1 To 9
+                MsgBox("ジャンルは指定できません。")
+                Exit Sub
+        End Select
+
+        'ファイルID
+        Dim iFileId As Integer = Nothing
 
         'ファイルサイズを取得
         Dim fi As System.IO.FileInfo = New System.IO.FileInfo(sFilePath)
         Dim lsize As Long = fi.Length
         fi = Nothing
 
+        Dim clsDBLogic As New DBLogic
+
         Try
 
-            'ファイルを移動
+
+            'ファイルの存在チェック
             Dim sAftPath As String = clsOraAccess.queryFolderPath(iNowFolder)
+
+            If System.IO.File.Exists(sAftPath & txtFileName.Text & ".zip") Then
+                MsgBox("移動先フォルダに同一ファイルが存在しています。")
+                Exit Sub
+            ElseIf Not System.IO.Directory.Exists(sAftPath) Then
+                MsgBox("移動先フォルダが存在しません。")
+                Exit Sub
+            End If
+
+            'ファイルを移動
             System.IO.File.Move(sFilePath, sAftPath & txtFileName.Text & ".zip")
 
             'ファイルをTBLに追加
-            clsOraAccess.insertFile(txtFileName.Text, txtFileName.Text & ".zip", iNowFolder, lsize, cmbRank.SelectedIndex + 1, picThumbs.Image)
+            iFileId = clsOraAccess.insertFile(txtFileName.Text, txtFileName.Text & ".zip", iNowFolder, lsize, iRank, picThumbs.Image)
 
-            'プルダウンの選択値を取得
 
-            For i = 1 To 6
+            '属性をファイルタグTBLに追加
+            Dim chk As CheckBox
+            For i = 1 To 10
+                chk = CType(Controls("chkZoku" & i), CheckBox)
+                If (chk.Checked = True) Then
+                    clsDBLogic.insertFileTag(clsOraAccess, 5, chk.Text, iFileId, 1)
+                End If
+            Next
+
+            'タグをファイルタグTBLに追加
+            For i = 1 To 9
                 If (Controls("txtTag" & i).Text <> "") Then
 
                     Dim cmb As ComboBox
                     cmb = Controls("cmbTag" & i)
                     If (cmb.SelectedValue > 0) Then
                         'ファイルタグをTBLに追加
-                        clsOraAccess.insertFileTag(cmb.SelectedValue, Controls("txtTag" & i).Text)
+                        clsDBLogic.insertFileTag(clsOraAccess, cmb.SelectedValue, Controls("txtTag" & i).Text, iFileId, 1)
                     End If
                 End If
             Next
 
-            Process.Start("C:\ProgramData\leeyes\Plugin\ExtractFile.exe", """" & sAftPath & txtFileName.Text & ".zip""")
+            'Process.Start("C:\ProgramData\NeeView\NeeView.exe", """" & sAftPath & txtFileName.Text & ".zip""")
 
             If (TabControl1.SelectedTab Is TabPage2) Then
                 ImageListCreate()
             End If
 
-            MessageBox.Show("ファイルの追加が完了しました。")
+            With Me.NotifyIcon1
+                .Icon = SystemIcons.Application
+                .Visible = True
+                .BalloonTipTitle = "FileMove"
+                .BalloonTipText = "ファイルの追加が完了しました。"
+                .BalloonTipIcon = ToolTipIcon.Info
+                .ShowBalloonTip(3000)
+            End With
 
         Catch ex As Exception
             MsgBox(ex.Message)
@@ -761,7 +913,7 @@ Public Class FileMoveForm
 
     'テキストボックス押下時のイベント
     '右ダブルクリックを取得
-    Private Sub txtTag_MouseDown(ByVal sender As System.Object, ByVal e As System.Windows.Forms.MouseEventArgs) Handles txtTag1.MouseDown, txtTag2.MouseDown, txtTag3.MouseDown, txtTag4.MouseDown, txtTag5.MouseDown, txtTag6.MouseDown
+    Private Sub txtTag_MouseDown(ByVal sender As System.Object, ByVal e As System.Windows.Forms.MouseEventArgs) Handles txtTag1.MouseDown, txtTag2.MouseDown, txtTag3.MouseDown, txtTag4.MouseDown, txtTag5.MouseDown, txtTag6.MouseDown, txtTag7.MouseDown, txtTag8.MouseDown, txtTag9.MouseDown
 
         'マウスのダブルクリックイベント
         If e.Button = MouseButtons.Right AndAlso e.Clicks = 2 Then
@@ -780,23 +932,24 @@ Public Class FileMoveForm
                 sChildFolderName = txtTag5.Text
             ElseIf sender Is txtTag6 Then
                 sChildFolderName = txtTag6.Text
+            ElseIf sender Is txtTag7 Then
+                sChildFolderName = txtTag7.Text
+            ElseIf sender Is txtTag8 Then
+                sChildFolderName = txtTag8.Text
+            ElseIf sender Is txtTag9 Then
+                sChildFolderName = txtTag9.Text
             End If
 
-            Dim iKensakuKbn As Integer
-            If (chkOver.Checked = True) Then
-                iKensakuKbn = 4
-            Else
-                iKensakuKbn = 3
-            End If
 
-            ImageListCreate(iKensakuKbn, cmbRank.SelectedIndex, sChildFolderName)
+            'iRankの妥当性
+            ImageListCreate(iRank, sChildFolderName)
             TabControl1.SelectedTab = TabPage2
         End If
     End Sub
 
     'テキストボックスをダブルクリック
     '入力値でフォルダTBLを検索し、ツリービューを変更
-    Private Sub txtTag_DoubleClick(sender As Object, e As System.EventArgs) Handles txtTag1.DoubleClick, txtTag2.DoubleClick, txtTag3.DoubleClick, txtTag4.DoubleClick, txtTag5.DoubleClick, txtTag6.DoubleClick
+    Private Sub txtTag_DoubleClick(sender As Object, e As System.EventArgs) Handles txtTag1.DoubleClick, txtTag2.DoubleClick, txtTag3.DoubleClick, txtTag4.DoubleClick, txtTag5.DoubleClick, txtTag6.DoubleClick, txtTag7.DoubleClick, txtTag8.DoubleClick, txtTag9.DoubleClick
 
         Dim sChildFolderName As String = Nothing
 
@@ -812,6 +965,12 @@ Public Class FileMoveForm
             sChildFolderName = txtTag5.Text
         ElseIf sender Is txtTag6 Then
             sChildFolderName = txtTag6.Text
+        ElseIf sender Is txtTag7 Then
+            sChildFolderName = txtTag7.Text
+        ElseIf sender Is txtTag8 Then
+            sChildFolderName = txtTag8.Text
+        ElseIf sender Is txtTag9 Then
+            sChildFolderName = txtTag9.Text
         End If
 
         TreeCreate(sChildFolderName)
@@ -834,6 +993,7 @@ Public Class FileMoveForm
         End If
 
         Dim sChildFolderName As String = Nothing
+        Dim iCategory As Integer
 
         For i = 1 To 6
             Dim cmb As ComboBox
@@ -844,6 +1004,7 @@ Public Class FileMoveForm
                     If (cmb.SelectedValue = 1) Then
                         If (Controls("txtTag" & i).Text <> "") Then
                             sChildFolderName = Controls("txtTag" & i).Text
+                            iCategory = cmb.SelectedValue
                             Exit For
                         End If
                     End If
@@ -852,6 +1013,7 @@ Public Class FileMoveForm
                     If (cmb.SelectedValue = 2) Then
                         If (Controls("txtTag" & i).Text <> "") Then
                             sChildFolderName = Controls("txtTag" & i).Text
+                            iCategory = cmb.SelectedValue
                             Exit For
                         End If
                     End If
@@ -859,6 +1021,7 @@ Public Class FileMoveForm
                     If (cmb.SelectedValue = 2) Then
                         If (Controls("txtTag" & i).Text <> "") Then
                             sChildFolderName = Controls("txtTag" & i).Text
+                            iCategory = cmb.SelectedValue
                             Exit For
                         End If
                     ElseIf (cmb.SelectedValue = 0) Then
@@ -866,6 +1029,7 @@ Public Class FileMoveForm
                             If (MsgBox(Controls("txtTag" & i).Text & "をフォルダ名にしますか？", vbYesNo) = vbYes) Then
                                 cmb.SelectedValue = 2
                                 sChildFolderName = Controls("txtTag" & i).Text
+                                iCategory = cmb.SelectedValue
                                 Exit For
                             End If
                         End If
@@ -874,6 +1038,7 @@ Public Class FileMoveForm
                     If (cmb.SelectedValue = 1 Or cmb.SelectedValue = 2) Then
                         If (Controls("txtTag" & i).Text <> "") Then
                             sChildFolderName = Controls("txtTag" & i).Text
+                            iCategory = cmb.SelectedValue
                             Exit For
                         End If
                     End If
@@ -891,8 +1056,15 @@ Public Class FileMoveForm
 
             'フォルダの作成
             Dim sParentFolderPath As String = clsOraAccess.queryFolderPath(iNowFolder)
-            System.IO.Directory.CreateDirectory(sParentFolderPath & sChildFolderName)
+            Dim clsDBLogic As New DBLogic
+
+            'フォルダの追加
             iNowFolder = clsOraAccess.insertFolder(iNowFolder, sChildFolderName)
+            'ファイルタグの追加
+            clsDBLogic.insertFileTag(clsOraAccess, iCategory, sChildFolderName, iNowFolder, 2)
+
+
+            System.IO.Directory.CreateDirectory(sParentFolderPath & sChildFolderName)
 
         Catch ex As Exception
             MsgBox(ex.Message)
@@ -916,7 +1088,14 @@ Public Class FileMoveForm
         If (MsgBox("削除しますか？" & vbCrLf & vbCrLf & sFilePath, vbYesNo) = vbYes) Then
             Try
                 My.Computer.FileSystem.DeleteFile(sFilePath, FileIO.UIOption.OnlyErrorDialogs, FileIO.RecycleOption.SendToRecycleBin)
-                MessageBox.Show("削除が完了しました。")
+                With Me.NotifyIcon1
+                    .Icon = SystemIcons.Application
+                    .Visible = True
+                    .BalloonTipTitle = "FileMove"
+                    .BalloonTipText = "削除が完了しました。"
+                    .BalloonTipIcon = ToolTipIcon.Info
+                    .ShowBalloonTip(3000)
+                End With
             Catch ex As Exception
                 MsgBox(ex.Message)
             End Try
@@ -927,7 +1106,7 @@ Public Class FileMoveForm
     'Hamana起動
     Private Sub picThumbs_DoubleClick(sender As Object, e As System.EventArgs) Handles picThumbs.DoubleClick
 
-        Process.Start("C:\ProgramData\leeyes\Leeyes.exe", """" & sFilePath & """")
+        Process.Start("C:\ProgramData\NeeView\NeeView.exe", """" & sFilePath & """")
         'Process.Start("C:\ProgramData\Hamana\Hamana.exe", """" & sFilePath & """")
 
     End Sub
@@ -987,22 +1166,33 @@ Public Class FileMoveForm
                 System.IO.File.Move(sFilePath, sAftPath & txtFileName.Text & ".zip")
             End If
 
+            Dim clsDBLogic As New DBLogic
+
             'ファイルをTBLに追加
-            clsOraAccess.updateFile(iNowFile, iNowFolder, txtFileName.Text, txtFileName.Text & ".zip", cmbRank.SelectedIndex, picThumbs.Image)
+            clsOraAccess.updateFile(iNowFile, iNowFolder, txtFileName.Text, txtFileName.Text & ".zip", iRank, picThumbs.Image)
 
             'ファイルタグをTBLから削除
-            clsOraAccess.deleteFileTag(iNowFile)
+            clsDBLogic.delFileTag(clsOraAccess, iNowFile, 1)
+
+            '属性をファイルタグTBLに追加
+            Dim chk As CheckBox
+            For i = 1 To 10
+                chk = CType(Controls("chkZoku" & i), CheckBox)
+                If (chk.Checked = True) Then
+                    clsDBLogic.insertFileTag(clsOraAccess, 5, chk.Text, iNowFile, 1)
+                End If
+            Next
 
             'プルダウンの選択値を取得し、ファイルタグをTBLに追加
-            For i = 1 To 6
+            For i = 1 To 9
                 If (Controls("txtTag" & i).Text <> "") Then
 
                     Dim cmb As ComboBox
                     cmb = Controls("cmbTag" & i)
 
                     If (cmb.SelectedValue > 0) Then
-                        'ファイルタグをTBLに追加
-                        clsOraAccess.insertFileTag(cmb.SelectedValue, Controls("txtTag" & i).Text)
+                        'ファイルタグをTBLに追加　
+                        clsDBLogic.insertFileTag(clsOraAccess, cmb.SelectedValue, Controls("txtTag" & i).Text, iNowFile, 1)
                     End If
                 End If
             Next
@@ -1011,8 +1201,16 @@ Public Class FileMoveForm
                 ImageListCreate()
             End If
 
+            With Me.NotifyIcon1
+                .Icon = SystemIcons.Application
+                .Visible = True
+                .BalloonTipTitle = "FileMove"
+                .BalloonTipText = "ファイルの更新が完了しました。"
+                .BalloonTipIcon = ToolTipIcon.Info
+                .ShowBalloonTip(3000)
+            End With
 
-            MessageBox.Show("ファイルの更新が完了しました。")
+            'MessageBox.Show("ファイルの更新が完了しました。")
 
         Catch ex As Exception
             MsgBox(ex.Message)
@@ -1025,9 +1223,13 @@ Public Class FileMoveForm
 
         If (MsgBox("削除しますか？" & vbCrLf & vbCrLf & sFilePath, vbYesNo) = vbYes) Then
 
+            Dim clsDBLogic As New DBLogic
+
             Try
-                My.Computer.FileSystem.DeleteFile(sFilePath, FileIO.UIOption.OnlyErrorDialogs, FileIO.RecycleOption.SendToRecycleBin)
+                clsDBLogic.delFileTag(clsOraAccess, iNowFile, 1)
                 clsOraAccess.deleteFile(iNowFile)
+
+                My.Computer.FileSystem.DeleteFile(sFilePath, FileIO.UIOption.OnlyErrorDialogs, FileIO.RecycleOption.SendToRecycleBin)
 
                 If (TabControl1.SelectedTab Is TabPage2) Then
                     ImageListCreate()
@@ -1060,14 +1262,8 @@ Public Class FileMoveForm
             Exit Sub
         End If
 
-        Dim iKensakuKbn As Integer
-        If (chkOver.Checked = True) Then
-            iKensakuKbn = 2
-        Else
-            iKensakuKbn = 1
-        End If
 
-        ImageListCreate(iKensakuKbn, cmbRank.SelectedIndex)
+        ImageListCreate(1, iRank)
     End Sub
 
     '更新日順ボタンクリック
@@ -1076,7 +1272,7 @@ Public Class FileMoveForm
         '検索フラグをオン
         bKensakuPattern = True
 
-        ImageListCreate(0, cmbRank.SelectedIndex)
+        ImageListCreate(0, iRank)
     End Sub
 
     'タグ追加 ボタンクリック
@@ -1087,6 +1283,8 @@ Public Class FileMoveForm
             Exit Sub
         End If
 
+        Dim clsDBLogic As New DBLogic
+
         'プルダウンの選択値を取得し、ファイルタグをTBLに追加
         Try
             For i = 1 To 6
@@ -1096,8 +1294,8 @@ Public Class FileMoveForm
                     cmb = Controls("cmbTag" & i)
 
                     If (cmb.SelectedValue > 0) Then
-                        'ファイルタグをTBLに追加
-                        clsOraAccess.insertFolderTag(iNowFolder, Controls("txtTag" & i).Text)
+                        'フォルダタグをTBLに追加
+                        clsDBLogic.insertFileTag(clsOraAccess, cmb.SelectedValue, Controls("txtTag" & i).Text, iNowFolder, 2)
                     End If
                 End If
             Next
@@ -1122,6 +1320,7 @@ Public Class FileMoveForm
         End If
 
         Dim sFolderPath As String
+        Dim clsDBLogic As New DBLogic
 
         Try
             'フォルダパスを取得
@@ -1133,6 +1332,9 @@ Public Class FileMoveForm
             End If
 
             'DBからフォルダ、フォルダタグを削除
+            clsDBLogic.delFileTag(clsOraAccess, iNowFolder, 2)
+
+
             clsOraAccess.deleteFolder(iNowFolder)
 
             'フォルダを削除
@@ -1145,7 +1347,7 @@ Public Class FileMoveForm
     End Sub
 
     'プルダウンの色を設定
-    Private Sub cmbRank_DrawItem(sender As Object, e As System.Windows.Forms.DrawItemEventArgs) Handles cmbRank.DrawItem
+    Private Sub cmbRank_DrawItem(sender As Object, e As System.Windows.Forms.DrawItemEventArgs)
 
         If e.Index = -1 Then Exit Sub
 
@@ -1215,24 +1417,29 @@ Public Class FileMoveForm
 
     End Sub
 
-    Private Sub FileMoveForm_KeyUp(ByVal sender As Object, ByVal e As System.Windows.Forms.KeyEventArgs) Handles MyBase.KeyUp
 
-        Select Case e.KeyCode
-            Case Keys.NumPad0
-                cmbRank.SelectedIndex = 0
-            Case Keys.NumPad1
-                cmbRank.SelectedIndex = 1
-            Case Keys.NumPad2
-                cmbRank.SelectedIndex = 2
-            Case Keys.NumPad3
-                cmbRank.SelectedIndex = 3
-            Case Keys.NumPad4
-                cmbRank.SelectedIndex = 4
-            Case Keys.NumPad5
-                cmbRank.SelectedIndex = 5
-        End Select
+    Private Sub RankImageChange(ByVal iIdx As Integer)
+
+
+        picRank1.Image = imgWhite
+        picRank2.Image = imgWhite
+        picRank3.Image = imgWhite
+        picRank4.Image = imgWhite
+        picRank5.Image = imgWhite
+
+        iRank = iIdx
+
+        If (iIdx = 0) Then
+            Exit Sub
+        End If
+
+        Dim pic As PictureBox
+        For i = 1 To iIdx
+            pic = Controls("picRank" & i)
+            pic.Image = imgBlack
+        Next
+
     End Sub
-
 
     'クリップボード取得
     Private Sub GetClipboardText()
@@ -1302,11 +1509,12 @@ Public Class FileMoveForm
         Console.WriteLine("タグ再設定")
 
         '現在のランクを保持
-        befRank = cmbRank.SelectedIndex
+        befRank = iRank
 
         '初期化
         ClearTextBox2(Me)
         ClearCombotBox(Me)
+        ClearCheckBox(Me)
 
         'コンストラクタでファイルパスを指定
         clsZipOpen = New ZipOpen()
@@ -1340,7 +1548,7 @@ Public Class FileMoveForm
         Next
 
         'ランクを再設定
-        cmbRank.SelectedIndex = befRank
+        RankImageChange(befRank)
 
         '＊＊＊ツリービュー作成処理＊＊＊
         TreeCreate(sConditionValue)
@@ -1350,7 +1558,94 @@ Public Class FileMoveForm
 
     End Sub
 
+    Private Sub ListBox1_DragEnter(ByVal sender As Object,
+        ByVal e As System.Windows.Forms.DragEventArgs) _
+        Handles ListBox1.DragEnter
+        'コントロール内にドラッグされたとき実行される
+        If e.Data.GetDataPresent(DataFormats.FileDrop) Then
+            'ドラッグされたデータ形式を調べ、ファイルのときはコピーとする
+            e.Effect = DragDropEffects.Copy
+        Else
+            'ファイル以外は受け付けない
+            e.Effect = DragDropEffects.None
+        End If
+    End Sub
 
+    Private Sub ListBox1_DragDrop(ByVal sender As Object,
+        ByVal e As System.Windows.Forms.DragEventArgs) _
+        Handles ListBox1.DragDrop
+        'コントロール内にドロップされたとき実行される
+        'ドロップされたすべてのファイル名を取得する
+        Dim fileName As String() = CType(
+        e.Data.GetData(DataFormats.FileDrop, False),
+        String())
+        'ListBoxに追加する
+        ListBox1.Items.AddRange(fileName)
+
+        'クリップボードにBitmapデータがあるか調べる（調べなくても良い）
+        If Clipboard.ContainsImage() Then
+            'クリップボードにあるデータの取得
+            Dim img As Image = Clipboard.GetImage()
+            If img IsNot Nothing Then
+                'データが取得できたときは表示する
+                PictureBox1.Image = img
+            End If
+        End If
+
+    End Sub
+
+    Private Sub chkZoku_CheckedChanged(sender As Object, e As EventArgs) Handles chkZoku1.CheckedChanged, chkZoku2.CheckedChanged, chkZoku3.CheckedChanged, chkZoku4.CheckedChanged, chkZoku5.CheckedChanged, chkZoku6.CheckedChanged, chkZoku7.CheckedChanged, chkZoku8.CheckedChanged, chkZoku9.CheckedChanged, chkZoku10.CheckedChanged
+
+        Dim chk As CheckBox
+        For i = 1 To 10
+            chk = CType(Controls("chkZoku" & i), CheckBox)
+
+
+            If sender Is chk Then
+                If chk.Checked = True Then
+                    chk.BackColor = Color.Yellow
+                Else
+                    chk.BackColor = Color.Transparent
+                End If
+            End If
+        Next
+
+    End Sub
+
+    Private Sub picRank1_Click(sender As Object, e As EventArgs) Handles picRank0.MouseLeave, picRank1.MouseHover, picRank2.MouseHover, picRank3.MouseHover, picRank4.MouseHover, picRank5.MouseHover
+
+
+        picRank1.Image = imgWhite
+        picRank2.Image = imgWhite
+        picRank3.Image = imgWhite
+        picRank4.Image = imgWhite
+        picRank5.Image = imgWhite
+
+        Dim pic As PictureBox
+        For i = 0 To 5
+            pic = Controls("picRank" & i)
+            If i <> 0 Then
+                pic.Image = imgBlack
+            End If
+
+            If (sender Is pic) Then
+                iRank = i
+                Exit For
+            End If
+        Next
+
+    End Sub
+
+    Private Sub CheckBox1_CheckedChanged(sender As Object, e As EventArgs) Handles CheckBox1.CheckedChanged
+        If (sender.checked = True) Then
+            lstBookMark.Hide()
+            TableLayoutPanel1.SetRowSpan(TabControl1, 4)
+        Else
+            lstBookMark.Show()
+            TableLayoutPanel1.SetRowSpan(TabControl1, 1)
+        End If
+
+    End Sub
 End Class
 
 

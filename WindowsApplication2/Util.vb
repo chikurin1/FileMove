@@ -1,6 +1,7 @@
-﻿Module Util
+﻿
+Module Util
 
-    Function ChangeFileSize(ByVal FileSize As Object)
+    Function ChangeFileSize(ByVal FileSize As Object) As String
         Dim dFileSize = CType(FileSize, Double)
         Select Case dFileSize
             Case 0 To 1024
@@ -17,6 +18,51 @@
                 Return dFileSize
         End Select
     End Function
+
+
+
+    '禁則文字を半角から全角に置換
+    Public Function ChangeKinsoku(ByVal sBef As String) As String
+
+        Dim arrayKinsoku As Char(,) = {{"?", "？"}, {"*", "＊"}, {":", "："}, {"/", "／"}, {"<", "＜"}, {">", "＞"}, {"\", "￥"}}
+
+        Dim sAft As String = Nothing
+        Dim sBuf As String = Nothing
+
+        sBuf = alphaHenkan(sBef)
+
+        Dim c As Char
+
+        For Each c In sBuf
+            For j = 0 To arrayKinsoku.GetLength(0) - 1
+                If (c = arrayKinsoku(j, 0)) Then
+                    sAft = sAft & arrayKinsoku(j, 1)
+                    Exit For
+                End If
+                If (j = arrayKinsoku.GetLength(0) - 1) Then
+                    sAft = sAft & c
+                End If
+            Next
+        Next
+
+        Return sAft
+
+    End Function
+
+    Function alphaHenkan(ByVal s As String) As String
+
+        Dim re As System.Text.RegularExpressions.Regex = New System.Text.RegularExpressions.Regex("[０-９Ａ-Ｚａ-ｚ’－　？＠．，]+")
+        Dim output As String = re.Replace(s, AddressOf myReplacer)
+
+        Return output
+    End Function
+
+    Function myReplacer(ByVal m As System.Text.RegularExpressions.Match) As String
+        Return Strings.StrConv(m.Value, VbStrConv.Narrow, 0)
+    End Function
+
+
+
     ' 幅w、高さhのImageオブジェクトを作成
     Function createThumbnail(ByRef image As Image, ByVal w As Integer, ByVal h As Integer) As Image
         Dim canvas As New Bitmap(w, h)
@@ -87,5 +133,23 @@
         Next cControl
     End Sub
 
+    Public Sub ClearCheckBox(ByVal hParent As Control)
+        ' hParent 内のすべてのコントロールを列挙する
+        For Each cControl As Control In hParent.Controls
+            ' 列挙したコントロールにコントロールが含まれている場合は再帰呼び出しする
+            If cControl.HasChildren Then
+                ClearCombotBox(cControl)
+            End If
+
+            ' コントロールの型が TextBoxBase からの派生型の場合は Text をクリアする
+            If TypeOf cControl Is CheckBox Then
+                Dim chk As CheckBox
+                chk = cControl
+                If (chk.Name <> "chkOver") Then
+                    chk.Checked = False
+                End If
+            End If
+        Next cControl
+    End Sub
 
 End Module

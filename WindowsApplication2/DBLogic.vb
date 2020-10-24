@@ -61,7 +61,7 @@ Public Class DBLogic
         iFileTagHimoCount = clsOraAccess.queryFileTagHimoCount(iFileTagId)
 
         'ファイルタグ紐づけテーブルのレコードが0件の場合、ファイルタグテーブルのレコードを削除
-        If (iFileTagHimoCount < 0) Then
+        If (iFileTagHimoCount <= 0) Then
             iFileTagHimoCount = clsOraAccess.delFileTagTBL(iFileTagId)
         End If
 
@@ -96,7 +96,7 @@ Public Class DBLogic
             iFileTagHimoCount = clsOraAccess.queryFileTagHimoCount(iFileTagId)
 
             'ファイルタグ紐づけテーブルのレコードが0件の場合、ファイルタグテーブルのレコードを削除
-            If (iFileTagHimoCount < 0) Then
+            If (iFileTagHimoCount <= 0) Then
                 iFileTagHimoCount = clsOraAccess.delFileTagTBL(iFileTagId)
             End If
 

@@ -6,6 +6,9 @@
     Private sFileMei As String
     Private imgThumbs As Image
 
+    Private sBookMarkDir As String
+    Private sBookMarkFile As String
+
     'value:zipファイル
     Public Sub New(ByVal value As String)
         sFilePath = value
@@ -48,6 +51,13 @@
     Public ReadOnly Property FileMei() As String
         Get
             Return sFileMei
+        End Get
+    End Property
+
+
+    Public ReadOnly Property BookMarkName() As String
+        Get
+            Return sBookMarkFile
         End Get
     End Property
 
@@ -108,31 +118,20 @@
         zf.Close()
     End Sub
 
-    Private Sub zipWorks(ByVal sBookMarkPath As String)
+    Public Sub zipWorks(ByVal sBookMarkPath As String)
 
         Dim width As Integer = 96
         Dim height As Integer = 96
 
         Dim bFlag As Boolean = False
 
-        Dim sBookMarkDir As String
-        Dim sBookMarkFile As String
 
+        sBookMarkDir = sBookMarkPath.Substring(0, sBookMarkPath.LastIndexOf("\"))
+        sBookMarkFile = sBookMarkPath.Substring(sBookMarkPath.LastIndexOf("\") + 1)
 
-        Select Case sBookMarkPath.IndexOf("\")
-
-            Case -1
-                sBookMarkDir = ""
-                sBookMarkFile = sBookMarkPath
-            Case 0
-                'ないはず
-            Case Else
-                sBookMarkDir = sBookMarkPath.Substring(0, sBookMarkPath.IndexOf("\") - 1)
-                sBookMarkFile = sBookMarkPath.Substring(sBookMarkPath.IndexOf("\") + 1)
-        End Select
 
         'ZipFileオブジェクトの作成 
-        Dim zf As New ICSharpCode.SharpZipLib.Zip.ZipFile(sFilePath)
+        Dim zf As New ICSharpCode.SharpZipLib.Zip.ZipFile(sBookMarkDir)
 
         'ZIP内のエントリを列挙
         Dim ze As ICSharpCode.SharpZipLib.Zip.ZipEntry

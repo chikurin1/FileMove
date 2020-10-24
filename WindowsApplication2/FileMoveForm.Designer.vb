@@ -78,7 +78,6 @@ Partial Class FileMoveForm
         Me.picRank4 = New System.Windows.Forms.PictureBox()
         Me.picRank5 = New System.Windows.Forms.PictureBox()
         Me.picRank0 = New System.Windows.Forms.PictureBox()
-        Me.CheckBox1 = New System.Windows.Forms.CheckBox()
         Me.TableLayoutPanel1 = New System.Windows.Forms.TableLayoutPanel()
         Me.TabControl1 = New System.Windows.Forms.TabControl()
         Me.TabPage1 = New System.Windows.Forms.TabPage()
@@ -91,6 +90,10 @@ Partial Class FileMoveForm
         Me.PictureBox1 = New System.Windows.Forms.PictureBox()
         Me.ListBox1 = New System.Windows.Forms.ListBox()
         Me.lstBookMark = New System.Windows.Forms.ListView()
+        Me.ilstBMThumbs = New System.Windows.Forms.ImageList(Me.components)
+        Me.btnBookMarkAdd = New System.Windows.Forms.Button()
+        Me.btnBookMarkDel = New System.Windows.Forms.Button()
+        Me.btnBookMarkUpdate = New System.Windows.Forms.Button()
         CType(Me.picThumbs, System.ComponentModel.ISupportInitialize).BeginInit()
         CType(Me.picRank1, System.ComponentModel.ISupportInitialize).BeginInit()
         CType(Me.picRank2, System.ComponentModel.ISupportInitialize).BeginInit()
@@ -142,6 +145,8 @@ Partial Class FileMoveForm
         '
         'txtTag1
         '
+        Me.txtTag1.AutoCompleteMode = System.Windows.Forms.AutoCompleteMode.SuggestAppend
+        Me.txtTag1.AutoCompleteSource = System.Windows.Forms.AutoCompleteSource.CustomSource
         Me.txtTag1.Font = New System.Drawing.Font("メイリオ", 9.0!, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, CType(128, Byte))
         Me.txtTag1.ImeMode = System.Windows.Forms.ImeMode.Hiragana
         Me.txtTag1.Location = New System.Drawing.Point(100, 136)
@@ -618,16 +623,6 @@ Partial Class FileMoveForm
         Me.picRank0.TabIndex = 53
         Me.picRank0.TabStop = False
         '
-        'CheckBox1
-        '
-        Me.CheckBox1.AutoSize = True
-        Me.CheckBox1.Location = New System.Drawing.Point(3, 136)
-        Me.CheckBox1.Name = "CheckBox1"
-        Me.CheckBox1.Size = New System.Drawing.Size(82, 16)
-        Me.CheckBox1.TabIndex = 54
-        Me.CheckBox1.Text = "CheckBox1"
-        Me.CheckBox1.UseVisualStyleBackColor = True
-        '
         'TableLayoutPanel1
         '
         Me.TableLayoutPanel1.ColumnCount = 1
@@ -762,12 +757,53 @@ Partial Class FileMoveForm
         Me.lstBookMark.TabIndex = 0
         Me.lstBookMark.UseCompatibleStateImageBehavior = False
         '
+        'ilstBMThumbs
+        '
+        Me.ilstBMThumbs.ColorDepth = System.Windows.Forms.ColorDepth.Depth8Bit
+        Me.ilstBMThumbs.ImageSize = New System.Drawing.Size(16, 16)
+        Me.ilstBMThumbs.TransparentColor = System.Drawing.Color.Transparent
+        '
+        'btnBookMarkAdd
+        '
+        Me.btnBookMarkAdd.Font = New System.Drawing.Font("メイリオ", 9.0!, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, CType(128, Byte))
+        Me.btnBookMarkAdd.Location = New System.Drawing.Point(254, 37)
+        Me.btnBookMarkAdd.Name = "btnBookMarkAdd"
+        Me.btnBookMarkAdd.Size = New System.Drawing.Size(88, 23)
+        Me.btnBookMarkAdd.TabIndex = 56
+        Me.btnBookMarkAdd.Text = "ブクマ追加"
+        Me.btnBookMarkAdd.UseVisualStyleBackColor = True
+        Me.btnBookMarkAdd.Visible = False
+        '
+        'btnBookMarkDel
+        '
+        Me.btnBookMarkDel.Font = New System.Drawing.Font("メイリオ", 9.0!, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, CType(128, Byte))
+        Me.btnBookMarkDel.Location = New System.Drawing.Point(348, 34)
+        Me.btnBookMarkDel.Name = "btnBookMarkDel"
+        Me.btnBookMarkDel.Size = New System.Drawing.Size(88, 23)
+        Me.btnBookMarkDel.TabIndex = 57
+        Me.btnBookMarkDel.Text = "ブクマ削除"
+        Me.btnBookMarkDel.UseVisualStyleBackColor = True
+        Me.btnBookMarkDel.Visible = False
+        '
+        'btnBookMarkUpdate
+        '
+        Me.btnBookMarkUpdate.Font = New System.Drawing.Font("メイリオ", 9.0!, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, CType(128, Byte))
+        Me.btnBookMarkUpdate.Location = New System.Drawing.Point(254, 34)
+        Me.btnBookMarkUpdate.Name = "btnBookMarkUpdate"
+        Me.btnBookMarkUpdate.Size = New System.Drawing.Size(88, 23)
+        Me.btnBookMarkUpdate.TabIndex = 58
+        Me.btnBookMarkUpdate.Text = "ブクマ更新"
+        Me.btnBookMarkUpdate.UseVisualStyleBackColor = True
+        Me.btnBookMarkUpdate.Visible = False
+        '
         'FileMoveForm
         '
         Me.AutoScaleDimensions = New System.Drawing.SizeF(6.0!, 12.0!)
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
         Me.ClientSize = New System.Drawing.Size(1006, 721)
-        Me.Controls.Add(Me.CheckBox1)
+        Me.Controls.Add(Me.btnBookMarkUpdate)
+        Me.Controls.Add(Me.btnBookMarkDel)
+        Me.Controls.Add(Me.btnBookMarkAdd)
         Me.Controls.Add(Me.picRank0)
         Me.Controls.Add(Me.picRank5)
         Me.Controls.Add(Me.picRank4)
@@ -895,17 +931,20 @@ Partial Class FileMoveForm
     Friend WithEvents picRank4 As PictureBox
     Friend WithEvents picRank5 As PictureBox
     Friend WithEvents picRank0 As PictureBox
-    Friend WithEvents CheckBox1 As CheckBox
     Friend WithEvents TableLayoutPanel1 As TableLayoutPanel
     Friend WithEvents lstBookMark As ListView
     Friend WithEvents TabControl1 As TabControl
     Friend WithEvents TabPage1 As TabPage
     Friend WithEvents treeDir As TreeView
-    Friend WithEvents TabPage2 As TabPage
-    Friend WithEvents lstThumbs As ListView
     Friend WithEvents TabPage3 As TabPage
     Friend WithEvents WebBrowser1 As WebBrowser
     Friend WithEvents TabPage4 As TabPage
     Friend WithEvents PictureBox1 As PictureBox
     Friend WithEvents ListBox1 As ListBox
+    Friend WithEvents TabPage2 As TabPage
+    Friend WithEvents lstThumbs As ListView
+    Friend WithEvents ilstBMThumbs As ImageList
+    Friend WithEvents btnBookMarkAdd As Button
+    Friend WithEvents btnBookMarkDel As Button
+    Friend WithEvents btnBookMarkUpdate As Button
 End Class

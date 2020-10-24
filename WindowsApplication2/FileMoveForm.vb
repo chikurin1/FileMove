@@ -3,17 +3,90 @@ Imports Oracle.DataAccess.Types
 
 Public Class FileMoveForm
 
-    'DBアクセス用クラスのインスタンスを作成
+    ''' <summary>
+    ''' DBアクセス用クラスのインスタンス
+    ''' </summary>
     Public clsOraAccess As OraAccess
 
-    Private iNowFile As Integer
-    Private iNowFolder As Integer
-    Public sFilePath As String = Nothing
-    Private iRank As Integer
+    ''' <summary>
+    ''' 初回起動の判定用
+    ''' FALSEの場合はStartProcを起動する
+    ''' </summary>
+    Private bStartFlag As Boolean = False
     Private bFirstFlag As Boolean
+
+    ''' <summary>
+    ''' 現在のファイルID
+    ''' </summary>
+    Private iNowFile As Integer
+
+    ''' <summary>
+    ''' 現在のフォルダID
+    ''' </summary>
+    Private iNowFolder As Integer
+
+    ''' <summary>
+    ''' 現在のブックマークID
+    ''' </summary>
+    Private iBookMarkId As Integer
+
+    ''' <summary>
+    ''' ファイルのフルパス
+    ''' </summary>
+    Public sFilePath As String = Nothing
+
+    ''' <summary>
+    ''' ブックマークファイルのフルパス
+    ''' </summary>
+    Public sBookMarkPath As String = Nothing
+
+    ''' <summary>
+    ''' ブックマークのファイル名
+    ''' </summary>
+    Public sBookMarkFileName As String = Nothing
+
+
+
+    ''' <summary>
+    ''' 現在のランク
+    ''' </summary>
+    Private iRank As Integer
+
+    ''' <summary>
+    ''' ファイルリスト(ファイルリストビューの設定値）
+    ''' 0:ファイルID
+    ''' 1:ファイルパス
+    ''' 2:ランク
+    ''' 3:サイズ
+    ''' 4:フォルダID
+    ''' </summary>
     Private lstImgPath(5) As ArrayList
+
+    ''' <summary>
+    ''' ブックマークリスト(ブックマークリストビューの設定値）
+    ''' 0:ファイルID
+    ''' 1:ファイルパス
+    ''' 2:ランク
+    ''' 3:サイズ
+    ''' 4:フォルダID
+    ''' 5:ブックマークID
+    ''' 6:ファイル名
+    ''' </summary>
+    Private lstBookMarkPath(7) As ArrayList
+
+    ''' <summary>
+    ''' 検索フラグ
+    ''' </summary>
     Private bKensakuPattern As Boolean
+
+    ''' <summary>
+    ''' ランキング用の☆マーク（白抜き）
+    ''' </summary>
     Private imgWhite As System.Drawing.Image = System.Drawing.Image.FromFile("C:\ProgramData\NeeView\Plugin\星白.png")
+
+    ''' <summary>
+    ''' ''' ランキング用の☆マーク（黒埋め）
+    ''' </summary>
     Private imgBlack As System.Drawing.Image = System.Drawing.Image.FromFile("C:\ProgramData\NeeView\Plugin\星黒.png")
 
 
@@ -30,23 +103,196 @@ Public Class FileMoveForm
         clsOraAccess = Nothing
     End Sub
 
-    'フォーム初期化
+
+    ''' <summary>
+    ''' フォーム初期化
+    ''' </summary>
+    ''' <param name="sender"></param>
+    ''' <param name="e"></param>
     Public Sub Form1_Load(sender As System.Object, e As System.EventArgs) Handles MyBase.Load
 
 
-        Dim readerDropList As OracleDataReader = Nothing
-
         Dim sbuf As String = Nothing
+        Dim clsFormUtil As New FormUtil(Me)
+
+        Console.WriteLine("Form1_Load開始")
+
+        clsFormUtil.ShowBookMark(False)
 
         If (bFirstFlag = False) Then
             'コマンドライン引数から、ファイルパスを取得
             For Each sbuf In My.Application.CommandLineArgs
+                sFilePath = sbuf
                 Exit For
             Next
-            sFilePath = sbuf
         End If
 
+        sFilePath = System.Web.HttpUtility.UrlDecode(sFilePath)
         Console.WriteLine("引数は「" & sFilePath & "」")
+
+
+        '初回起動時のみStartProcを呼び出し、タグのプルダウン、属性チェックを設定
+        If bStartFlag = False Then
+            StartProc()
+            bStartFlag = True
+        End If
+
+        iRank = 1
+
+        'コマンドライン引数が未設定の場合、ツリービューを作成し処理終了。
+        If sFilePath Is Nothing Then
+            TreeCreate("")
+            Exit Sub
+        End If
+
+        Select Case System.IO.Path.GetExtension(sFilePath).ToLower
+            Case ".zip"
+                sBookMarkPath = Nothing
+            Case ".jpg", ".jpeg", ".png"
+                sBookMarkPath = sFilePath
+
+                'ファイルパスにzip書庫を設定
+                sFilePath = sFilePath.Substring(0, sFilePath.IndexOf(".zip") + 4)
+
+                Console.WriteLine(sFilePath)
+
+            Case ".rar"
+                If MsgBox("rarファイルです。変換しますか？", vbYesNo) = vbYes Then
+                    Process.Start("C:\Users\chikurin\source\repos\ExtractFile\ExtractFile\bin\x64\Release\ExtractFile.exe", """" & sFilePath & """")
+                End If
+                sBookMarkPath = Nothing
+                TreeCreate("")
+                Exit Sub
+            Case Else
+                Exit Sub
+        End Select
+
+
+        Dim readerFilePath As OracleDataReader = Nothing
+        Dim sConditionValue As String = Nothing
+
+        Try
+            'コマンドライン引数がブックマークの場合
+            If sBookMarkPath IsNot Nothing Then
+
+                'パスからブックマーク情報を取得
+                clsOraAccess.queryBookMarkPath(sBookMarkPath, readerFilePath)
+
+                '存在チェック
+                If readerFilePath.HasRows = True Then
+                    'ブックマークテーブルにデータがある場合、ファイルを取得
+
+                    'フォーム生成
+                    '絞込み条件をタグから取得()
+                    sConditionValue = BMFormInit(readerFilePath)
+
+                    '＊＊＊ツリービュー作成処理＊＊＊
+                    TreeCreate(sConditionValue)
+
+                    'サムネイル作成
+                    lstThumbs.Clear()
+                    ImageListCreate()
+
+                    readerFilePath.Close()
+
+                    '初期処理終了、フォームを表示
+                    Exit Sub
+                End If
+            End If
+
+
+            'パスからファイル情報を取得
+            clsOraAccess.queryFilePath(sFilePath, readerFilePath)
+
+            'zipファイルの存在チェック
+            If readerFilePath.HasRows = True Then
+                'ファイルTBLにzipファイルがある場合
+
+                If sBookMarkPath IsNot Nothing Then
+
+                    'zipファイルのファイルIDを取得
+                    clsFormUtil.FileIDGet(readerFilePath, iNowFile, iNowFolder)
+
+                    'フォーム生成
+                    '絞込み条件をタグから取得()
+                    sConditionValue = BMFormInit()
+
+                    '＊＊＊ツリービュー作成処理＊＊＊
+                    TreeCreate(sConditionValue)
+
+                    'サムネイル作成
+                    lstThumbs.Clear()
+                    ImageListCreate()
+
+
+                    '初期処理終了、フォームを表示
+
+
+                Else
+
+                    'ファイル表示処理
+                    'ファイルTBLから取得した情報をもとにフォーム、ツリービュー設定
+
+                    'フォーム生成
+                    '絞込み条件をタグから取得()
+                    sConditionValue = FormInit(readerFilePath)
+
+                    '＊＊＊ツリービュー作成処理＊＊＊
+                    TreeCreate(sConditionValue)
+
+                    'サムネイル作成
+                    lstThumbs.Clear()
+                    ImageListCreate()
+
+                End If
+
+            Else
+                'ファイルTBLにデータが無い場合、パラメータのファイル名からフォーム、ツリービュー設定
+
+
+                'ブックマーク追加処理では確認MSGを表示
+                If sBookMarkPath IsNot Nothing Then
+
+                    MsgBox("ブックマーク追加前にファイルテーブルへの追加を行います")
+
+                End If
+
+                'フォーム生成
+                '絞込み条件をタグから取得()
+                sConditionValue = FormInit()
+
+                '＊＊＊ツリービュー作成処理＊＊＊
+                TreeCreate(sConditionValue)
+
+                If (sConditionValue = Nothing) Then
+                    RankImageChange(1)
+                End If
+
+            End If
+
+
+
+            '初期処理終了、フォームを表示
+
+        Catch ex As Exception
+            MsgBox(ex.Message)
+        Finally
+            readerFilePath.Close()
+        End Try
+
+    End Sub
+
+
+    ''' <summary>
+    ''' 初期起動時にのみ呼ばれる
+    ''' タグのプルダウン設定、属性チェックの初期設定を行う
+    ''' </summary>
+    Private Sub StartProc()
+
+        Dim readerDropList As OracleDataReader = Nothing
+        Dim clsFormUtil As New FormUtil(Me)
+
+        Console.WriteLine("FStartProc開始")
 
         Me.TopMost = True
         'Me.TopMost = False
@@ -65,11 +311,8 @@ Public Class FileMoveForm
         '検索フラグをオフ
         bKensakuPattern = False
 
-        btnMove.Visible = True
-        btnDelete.Visible = True
-        btnUpdate.Visible = False
-        btnNowDel.Visible = False
-        Me.AcceptButton = Me.btnMove
+        '追加モードでボタン設定
+        clsFormUtil.BtnAddMode()
 
         '＊＊＊プルダウン生成＊＊＊
         If (bFirstFlag = False) Then
@@ -133,76 +376,42 @@ Public Class FileMoveForm
             End Try
         End If
 
-        iRank = 1
+        Dim txt(8) As TextBox
 
-        'コマンドライン引数のファイルがzip以外の時は処理終了
-        If sFilePath Is Nothing Then
-            Exit Sub
-        End If
+        Dim readerTagList As OracleDataReader
+        Dim autoCompList As New AutoCompleteStringCollection
 
-        Select Case System.IO.Path.GetExtension(sFilePath)
-            Case ".zip"
+        clsOraAccess.queryTagList("", readerTagList)
 
-            Case ".jpg", ".jpeg", ".png"
+        For i = 0 To 8
 
+            txt(i) = CType(Controls("txtTag" & i + 1), TextBox)
 
-            Case ".rar"
-                If MsgBox("rarファイルです。変換しますか？", vbYesNo) = vbYes Then
-                    Process.Start("C:\Users\chikurin\source\repos\ExtractFile\ExtractFile\bin\x64\Release\ExtractFile.exe", """" & sFilePath & """")
-                End If
-                Exit Sub
-            Case Else
-                Exit Sub
-        End Select
+            txt(i).AutoCompleteMode = Windows.Forms.AutoCompleteMode.SuggestAppend           ' サジェストモード
+            txt(i).AutoCompleteSource = Windows.Forms.AutoCompleteSource.CustomSource    ' カスタムソースに指定
 
 
-        '存在チェック
-        Dim readerFilePath As OracleDataReader = Nothing
+            While (readerTagList.Read())
+                autoCompList.Add(readerTagList.GetString(0))
+            End While
 
-        Try
-            clsOraAccess.queryFilePath(sFilePath, readerFilePath)
+            txt(i).AutoCompleteCustomSource = autoCompList
 
-            Dim sConditionValue As String = Nothing
-            If (readerFilePath.HasRows = False) Then
 
-                'フォーム生成
-                '絞込み条件をタグから取得()
-                sConditionValue = FormInit()
 
-                '＊＊＊ツリービュー作成処理＊＊＊
-                TreeCreate(sConditionValue)
-
-                If (sConditionValue = Nothing) Then
-                    RankImageChange(1)
-                End If
-
-            Else
-                'フォーム生成
-                '絞込み条件をタグから取得()
-                sConditionValue = FormInit(readerFilePath)
-
-                '＊＊＊ツリービュー作成処理＊＊＊
-                TreeCreate(sConditionValue)
-
-                'サムネイル作成
-                lstThumbs.Clear()
-                ImageListCreate()
-
-            End If
-
-        Catch ex As Exception
-            MsgBox(ex.Message)
-        Finally
-            readerFilePath.Close()
-        End Try
-
+        Next
+        readerTagList.Close()
     End Sub
 
-    '初期化（既存ファイルなし時）
+    ''' <summary>
+    ''' 初期化（既存ファイルなし時）
+    ''' </summary>
+    ''' <returns>フォルダ名</returns>
     Private Function FormInit() As String
         '＊＊＊フォーム生成＊＊＊
         'ファイルパスで指定されたZIP書庫を展開し、
         'フォルダ名、サムネイル、タグを取得
+
 
         Dim clsZipOpen As ZipOpen
         Dim sFileName As String
@@ -210,29 +419,222 @@ Public Class FileMoveForm
         Dim sConditionValue As String = Nothing
         Dim thumbnail As Image
         Dim fi As System.IO.FileInfo
+        Dim clsFormUtil As New FormUtil(Me)
 
 
         Console.WriteLine("初期化（既存ファイル無し時)")
 
         '初期化
-        ClearTextBox(Me)
-        ClearCombotBox(Me)
-        ClearCheckBox(Me)
+        clsFormUtil.DataClear()
 
-        'テキストタグの右クリックメニューを無効化
-        txtTag1.ContextMenu = New ContextMenu
-        txtTag2.ContextMenu = New ContextMenu
-        txtTag3.ContextMenu = New ContextMenu
-        txtTag4.ContextMenu = New ContextMenu
-        txtTag5.ContextMenu = New ContextMenu
-        txtTag6.ContextMenu = New ContextMenu
-        txtTag7.ContextMenu = New ContextMenu
-        txtTag8.ContextMenu = New ContextMenu
-        txtTag9.ContextMenu = New ContextMenu
         Try
             'コンストラクタでファイルパスを指定
             clsZipOpen = New ZipOpen(sFilePath)
             clsZipOpen.tagCreate(clsZipOpen.FileName)
+
+            'ファイル名取得し、フォームに値を設定
+            sFileName = clsZipOpen.FileName
+            Me.txtFileName.Text = sFileName
+
+            Console.WriteLine("ファイル名" & txtFileName.Text)
+
+
+            '絞込み条件をタグから取得
+            sConditionValue = Nothing
+
+
+            'タグ取得し、フォームに値を設定
+            listTag = clsZipOpen.Tag
+            Dim ilistIdx As Integer = 1
+            Dim sBufTag As String = Nothing
+
+
+            For Each sValue In listTag
+                Controls("txtTag" & ilistIdx).Text = sValue
+
+
+                Dim iSelValue As Integer
+                iSelValue = clsOraAccess.queryDefaultCategory(sValue)
+
+                Select Case iSelValue
+                    Case 1
+                        sConditionValue = sValue
+                    Case 2
+                        If sConditionValue Is Nothing Then
+                            sConditionValue = sValue
+                        End If
+                End Select
+
+                Dim cmb As ComboBox
+                cmb = CType(Controls("cmbTag" & ilistIdx), ComboBox)
+                cmb.SelectedValue = iSelValue
+                ilistIdx += 1
+            Next
+
+            'イメージを取得し、フォームに設定
+            thumbnail = clsZipOpen.Thumbs
+            Me.picThumbs.Image = thumbnail
+
+            'パスをフォームに設定
+            Me.lblFilePath.Text = sFilePath
+
+            fi = New System.IO.FileInfo(sFilePath)
+            'ファイルのサイズを取得
+            Me.lblFileSize.Text = ChangeFileSize(fi.Length)
+
+            RankImageChange(iRank)
+
+            'ファイル名をテキストボックスに設定
+            txtTagSetting.Text = clsZipOpen.FileMei
+
+            clsFormUtil.BtnAddMode()
+
+        Catch ex As Exception
+            MsgBox(ex.Message)
+        Finally
+            fi = Nothing
+            thumbnail = Nothing
+            clsZipOpen = Nothing
+        End Try
+
+
+        'googleチェックありの場合、ファイル名でgoogle検索
+        If (chkGoogle.Checked = True) Then
+            Dim sName As String = txtTagSetting.Text
+            If (sName <> "") Then
+                TabControl1.SelectedTab = TabPage3
+                WebBrowser1.Navigate(New Uri("https://www.google.co.jp/search?q=" & Uri.EscapeUriString(sName.Trim)))
+                'Process.Start("https://www.google.co.jp/search?q=" & Uri.EscapeUriString(sName.Trim))
+            End If
+        End If
+
+        'txtFileName.Focus()
+        TabControl1.Focus()
+
+        Return sConditionValue
+
+    End Function
+
+
+    ''' <summary>
+    ''' 初期化（既存ファイルあり時）
+    ''' </summary>
+    ''' <param name="readerFilePath">ファイルパステーブルのレコード</param>
+    ''' <returns></returns>
+    Private Function FormInit(ByRef readerFilePath As OracleDataReader) As String
+
+        Console.WriteLine("初期化（既存ファイルあり時）")
+
+        Dim clsFormUtil As New FormUtil(Me)
+
+        'タグやチェックをクリア
+        clsFormUtil.DataClear()
+
+        '更新モードでボタン設定
+        clsFormUtil.BtnUpdateMode()
+
+        'サムネイルを設定
+        clsFormUtil.ImageSetFile(sFilePath)
+
+
+        'カレントファイル、フォルダを変数に格納
+        While (readerFilePath.Read())
+            iNowFile = readerFilePath.GetValue(0)
+            iNowFolder = readerFilePath.GetValue(6)
+
+
+            'パス、タイトル、ファイルサイズ設定
+            Me.lblFilePath.Text = sFilePath
+            Me.txtFileName.Text = readerFilePath.GetString(1)
+            Me.lblFileSize.Text = ChangeFileSize(readerFilePath.GetValue(3))
+            Me.lblNowFolder.Text = readerFilePath.GetString(7)
+
+            'ランクを設定
+            RankImageChange(readerFilePath.GetValue(5))
+
+            clsFormUtil.TagCreate(iBookMarkId, 3)
+            Exit While
+        End While
+
+        'txtFileName.Focus()
+        TabControl1.Focus()
+
+        Return readerFilePath.GetString(8)
+
+    End Function
+
+    ''' <summary>
+    ''' 初期化(イメージリストクリック時）
+    ''' </summary>
+    ''' <param name="sFilePath">ファイルパス</param>
+    ''' <returns>0固定</returns>
+    Private Function FormInit(ByVal sFilePath As String) As String
+
+        Dim clsFormUtil As New FormUtil(Me)
+
+        'タグやチェックをクリア
+        clsFormUtil.DataClear()
+
+        'カレントファイル、フォルダを変数に格納
+        iNowFile = CInt(lstImgPath(0)(lstThumbs.SelectedItems(0).Index))
+
+        'パス、タイトル、ファイルサイズ設定
+        Me.lblFilePath.Text = sFilePath
+        Me.txtFileName.Text = lstThumbs.SelectedItems(0).Text
+        Me.lblFileSize.Text = CType(ChangeFileSize(lstImgPath(3)(lstThumbs.SelectedItems(0).Index)), String)
+
+        '更新モードでボタン設定
+        clsFormUtil.BtnUpdateMode()
+
+        'ランクを設定
+        RankImageChange(CInt(lstImgPath(2)(lstThumbs.SelectedItems(0).Index)))
+
+        'サムネイルを指定
+        clsFormUtil.ImageSetFile(sFilePath)
+
+        'タグを設定
+        clsFormUtil.TagCreate(iNowFile, 1)
+
+
+        BookMarkListCreate(iNowFile)
+
+
+        clsFormUtil.BtnUpdateMode()
+        TabControl1.Focus()
+
+        Return 0
+
+    End Function
+
+    ''' <summary>
+    ''' 初期化（既存ファイルなし時）
+    ''' </summary>
+    ''' <returns>フォルダ名</returns>
+    Private Function BMFormInit() As String
+        '＊＊＊フォーム生成＊＊＊
+        'ファイルパスで指定されたZIP書庫を展開し、
+        'フォルダ名、サムネイル、タグを取得
+
+
+        Dim clsZipOpen As ZipOpen
+        Dim sFileName As String
+        Dim listTag As ArrayList
+        Dim sConditionValue As String = Nothing
+        Dim thumbnail As Image
+        Dim fi As System.IO.FileInfo
+        Dim clsFormUtil As New FormUtil(Me)
+
+
+        Console.WriteLine("初期化（既存ファイル無し時)")
+
+        '初期化
+        clsFormUtil.DataClear()
+
+        Try
+            'コンストラクタでファイルパスを指定
+            clsZipOpen = New ZipOpen()
+            clsZipOpen.zipWorks(sBookMarkPath)
+            clsZipOpen.tagCreate(clsZipOpen.BookMarkName)
 
             'ファイル名取得し、フォームに値を設定
             sFileName = clsZipOpen.FileName
@@ -266,7 +668,7 @@ Public Class FileMoveForm
             Me.picThumbs.Image = thumbnail
 
             'パスをフォームに設定
-            Me.lblFilePath.Text = sFilePath
+            Me.lblFilePath.Text = sBookMarkPath
 
             fi = New System.IO.FileInfo(sFilePath)
             'ファイルのサイズを取得
@@ -275,9 +677,12 @@ Public Class FileMoveForm
             RankImageChange(iRank)
 
             'ファイル名をテキストボックスに設定
-            txtTagSetting.Text = clsZipOpen.FileMei
+            txtTagSetting.Text = clsZipOpen.BookMarkName
 
-            btnUpdate.Focus()
+            sBookMarkFileName = clsZipOpen.BookMarkName
+
+            clsFormUtil.BtnBookMarkAddMode()
+
         Catch ex As Exception
             MsgBox(ex.Message)
         Finally
@@ -287,16 +692,6 @@ Public Class FileMoveForm
         End Try
 
 
-        'googleチェックありの場合、ファイル名でgoogle検索
-        If (chkGoogle.Checked = True) Then
-            Dim sName As String = txtTagSetting.Text
-            If (sName <> "") Then
-                TabControl1.SelectedTab = TabPage3
-                WebBrowser1.Navigate(New Uri("https://www.google.co.jp/search?q=" & Uri.EscapeUriString(sName.Trim)))
-                'Process.Start("https://www.google.co.jp/search?q=" & Uri.EscapeUriString(sName.Trim))
-            End If
-        End If
-
         'txtFileName.Focus()
         TabControl1.Focus()
 
@@ -304,173 +699,105 @@ Public Class FileMoveForm
 
     End Function
 
-    '初期化（既存ファイルあり時）
-    Private Function FormInit(ByRef readerFilePath As OracleDataReader) As String
+    ''' <summary>
+    ''' 初期化(イメージリストクリック時）
+    ''' </summary>
+    ''' <param name="sFilePath">ファイルパス</param>
+    ''' <returns>0固定</returns>
+    Private Function BMFormInit(ByVal sFilePath As String) As String
 
-        Console.WriteLine("初期化（既存ファイルあり時）")
+        Dim clsFormUtil As New FormUtil(Me)
 
-        '初期化
-        ClearTextBox(Me)
-        ClearCombotBox(Me)
-        ClearCheckBox(Me)
+        'タグやチェックをクリア
+        clsFormUtil.DataClear()
 
-        'カレントファイル、フォルダを変数に格納
-        iNowFile = readerFilePath.GetValue(0)
-        iNowFolder = readerFilePath.GetValue(6)
+
+        'ブックマークIDを設定
+        iBookMarkId = CInt(lstBookMarkPath(5)(lstBookMark.SelectedItems(0).Index))
+
+        'ファイルIDを設定
+        iNowFile = CInt(lstBookMarkPath(0)(lstBookMark.SelectedItems(0).Index))
+
+        'ブックマーク名を設定
+        sBookMarkFileName = lstBookMarkPath(6)(lstBookMark.SelectedItems(0).Index)
 
         'パス、タイトル、ファイルサイズ設定
         Me.lblFilePath.Text = sFilePath
-        Me.txtFileName.Text = readerFilePath.GetString(1)
-        Me.lblFileSize.Text = ChangeFileSize(readerFilePath.GetValue(3))
-        Me.lblNowFolder.Text = readerFilePath.GetString(7)
+        Me.txtFileName.Text = lstBookMark.SelectedItems(0).Text
+        Me.lblFileSize.Text = CType(ChangeFileSize(lstBookMarkPath(3)(lstBookMark.SelectedItems(0).Index)), String)
 
-        btnMove.Visible = False
-        btnDelete.Visible = False
-        btnUpdate.Visible = True
-        btnNowDel.Visible = True
-        Me.AcceptButton = Me.btnUpdate
+        '更新モードでボタン設定
+        clsFormUtil.BtnBookMarkUpdateMode()
 
-        Dim i As Integer
+        'ランクを設定
+        RankImageChange(CInt(lstBookMarkPath(2)(lstBookMark.SelectedItems(0).Index)))
 
-        Dim clsZipOpen As ZipOpen
-        Dim readerFileTag As OracleDataReader = Nothing
-        Try
-            'ランクを設定
-            RankImageChange(readerFilePath.GetValue(5))
+        'サムネイルを指定
+        clsFormUtil.ImageSetBookMark(sFilePath)
 
-            'コンストラクタでファイルパスを指定
-            clsZipOpen = New ZipOpen(sFilePath)
-            clsZipOpen.tagCreate(clsZipOpen.FileName)
+        'タグを設定
+        clsFormUtil.TagCreate(iBookMarkId, 3)
 
-            'イメージを取得し、フォームに設定
-            Me.picThumbs.Image = clsZipOpen.Thumbs
 
-            'タグ取得
-            While (readerFilePath.Read())
-                clsOraAccess.queryFileTag(readerFilePath.GetValue(0), 1, readerFileTag)
-                Exit While
-            End While
-
-            'タグを設定
-            Dim ilistIdx As Integer = 1
-            Dim cmb As ComboBox
-            Dim chk As CheckBox
-            While (readerFileTag.Read())
-                Dim chkFlag As Boolean = False
-                If (readerFileTag.GetValue(0) = 5) Then
-                    For i = 1 To 10
-                        chk = CType(Controls("chkZoku" & i), CheckBox)
-                        If (chk.Text = readerFileTag.GetValue(1)) Then
-                            chk.Checked = True
-                            chkFlag = True
-                            Exit For
-                        End If
-                    Next
-                End If
-                If (chkFlag = False) Then
-                    Controls("txtTag" & ilistIdx).Text = readerFileTag.GetString(1)
-                    cmb = Controls("cmbTag" & ilistIdx)
-                    cmb.SelectedValue = readerFileTag.GetValue(0)
-                    ilistIdx += 1
-                End If
-
-            End While
-            readerFileTag.Close()
-
-        Catch ex As Exception
-            MsgBox(ex.Message)
-        Finally
-            readerFileTag.Close()
-            clsZipOpen = Nothing
-        End Try
-
-        'txtFileName.Focus()
-        TabControl1.Focus()
-
-        Return readerFilePath.GetString(8)
+        Return 0
 
     End Function
 
-    '初期化(イメージリストクリック時）
-    Private Function FormInit(ByVal sFilePath As String) As String
+    ''' <summary>
+    ''' 初期化（既存ファイルあり時）
+    ''' </summary>
+    ''' <param name="readerFilePath">ファイルパステーブルのレコード</param>
+    ''' <returns></returns>
+    Private Function BMFormInit(ByRef readerMBFilePath As OracleDataReader) As String
 
-        '初期化
-        ClearTextBox(Me)
-        ClearCombotBox(Me)
-        ClearCheckBox(Me)
+        Console.WriteLine("初期化（既存ファイルあり時）")
 
-        'カレントファイル、フォルダを変数に格納
-        iNowFile = CInt(lstImgPath(0)(lstThumbs.SelectedItems(0).Index))
+        Dim clsFormUtil As New FormUtil(Me)
 
-        'パス、タイトル、ファイルサイズ設定
-        Me.lblFilePath.Text = sFilePath
-        Me.txtFileName.Text = lstThumbs.SelectedItems(0).Text
-        Me.lblFileSize.Text = CType(ChangeFileSize(lstImgPath(3)(lstThumbs.SelectedItems(0).Index)), String)
+        'タグやチェックをクリア
+        clsFormUtil.DataClear()
 
-        btnMove.Visible = False
-        btnDelete.Visible = False
-        btnUpdate.Visible = True
-        btnNowDel.Visible = True
-        Me.AcceptButton = Me.btnUpdate
+        '更新モードでボタン設定
+        clsFormUtil.BtnBookMarkAddMode()
 
-        Dim clsZipOpen As ZipOpen
-        Dim readerFileTag As OracleDataReader = Nothing
+        While (readerMBFilePath.Read())
+            'カレントファイル、フォルダを変数に格納
+            iNowFile = readerMBFilePath.GetValue(0)
+            iNowFolder = readerMBFilePath.GetValue(6)
+            iBookMarkId = readerMBFilePath.GetValue(7)
 
-        Try
+            'パス、タイトル、ファイルサイズ設定
+            Me.lblFilePath.Text = sBookMarkPath
+            Me.txtFileName.Text = readerMBFilePath.GetString(1)
+            Me.lblFileSize.Text = ChangeFileSize(readerMBFilePath.GetValue(3))
+            Me.lblNowFolder.Text = readerMBFilePath.GetValue(7)
+
             'ランクを設定
-            RankImageChange(CInt(lstImgPath(2)(lstThumbs.SelectedItems(0).Index)))
+            RankImageChange(readerMBFilePath.GetValue(5))
 
-            'コンストラクタでファイルパスを指定
-            clsZipOpen = New ZipOpen(sFilePath)
+            'サムネイルを設定
+            clsFormUtil.ImageSetBookMark(sBookMarkPath)
 
-            'イメージを取得し、フォームに設定
-            Me.picThumbs.Image = clsZipOpen.Thumbs
+            'タグ設定
+            clsFormUtil.TagCreate(iBookMarkId, 3)
+        End While
 
-            'タグ取得
-            clsOraAccess.queryFileTag(iNowFile, 1, readerFileTag)
-
-            'タグを設定
-            Dim ilistIdx As Integer = 1
-            Dim cmb As ComboBox
-            Dim chk As CheckBox
-            While (readerFileTag.Read())
-                Dim chkFlag As Boolean = False
-                If CInt(readerFileTag.GetValue(0)) = 5 Then
-                    For i = 1 To 10
-                        chk = CType(Controls("chkZoku" & i), CheckBox)
-                        If chk.Text = CType(readerFileTag.GetValue(1), String) Then
-                            chk.Checked = True
-                            chkFlag = True
-                            Exit For
-                        End If
-                    Next
-                End If
-                If (chkFlag = False) Then
-                    Controls("txtTag" & ilistIdx).Text = readerFileTag.GetString(1)
-                    cmb = CType(Controls("cmbTag" & ilistIdx), ComboBox)
-                    cmb.SelectedValue = readerFileTag.GetValue(0)
-                    ilistIdx += 1
-                End If
-
-            End While
-            readerFileTag.Close()
-
-        Catch ex As Exception
-            MsgBox(ex.Message)
-        Finally
-            readerFileTag.Close()
-            clsZipOpen = Nothing
-        End Try
-
-        'txtFileName.Focus()
+        clsFormUtil.BtnBookMarkUpdateMode()
         TabControl1.Focus()
 
         Return 0
 
     End Function
 
-    'ツリービュー選択
-    'カレントフォルダを変更
+
+
+
+    ''' <summary>
+    ''' ツリービュー選択
+    ''' カレントフォルダを変更
+    ''' </summary>
+    ''' <param name="sender"></param>
+    ''' <param name="e"></param>
     Private Sub treeDir_AfterSelect(sender As Object, e As System.Windows.Forms.TreeViewEventArgs) Handles treeDir.AfterSelect
         If (treeDir.SelectedNode Is Nothing) Then Exit Sub
         iNowFolder = treeDir.SelectedNode.Name
@@ -492,38 +819,28 @@ Public Class FileMoveForm
 
     End Sub
 
-    'イメージリスト作成
+
+    ''' <summary>
+    ''' イメージリスト作成
+    ''' </summary>
     Private Sub ImageListCreate()
+
+        Dim clsFormUtil As New FormUtil(Me)
+        clsFormUtil.AddThumnailClear()
 
         TabControl1.SelectedTab = TabPage2
 
         lstThumbs.Clear()
+        ilstThumbs.Images.Clear()
+
         Dim readerFileList As OracleDataReader = Nothing
-        lstImgPath(0) = New ArrayList
-        lstImgPath(1) = New ArrayList
-        lstImgPath(2) = New ArrayList
-        lstImgPath(3) = New ArrayList
-        lstImgPath(4) = New ArrayList
+
         Try
             clsOraAccess.queryFileList(iNowFolder, readerFileList)
 
-            While (readerFileList.Read())
-                'ZipSamnail(readerFileList.GetString(2), readerFileList.GetValue(0), readerFileList.GetString(1), readerFileList.GetValue(3))
-                'BLOBからデータを取得する場合は、上のZipSamnailをコメントし、下3行をコメントアウトする。
-                'また、DAOについて、UNION ALLに変更する。
-                Dim blob As OracleBlob = readerFileList.GetOracleBlob(4)
-                Dim ms As New System.IO.MemoryStream(blob.Value)
-                AddThumnail(New Bitmap(ms), readerFileList.GetValue(0), readerFileList.GetString(1), readerFileList.GetValue(3), readerFileList.GetValue(5))
+            clsFormUtil.lstImageListInit(lstImgPath)
+            clsFormUtil.lstImageListSet(lstImgPath, readerFileList, ilstThumbs, lstThumbs)
 
-                'Dim bmp As New Bitmap("D:\Users\chikurin\Desktop\tes\" & myReader.GetValue(0).ToString & ".bmp")
-                'AddThumnail(bmp, 1, 1)
-
-                lstImgPath(0).Add(readerFileList.GetValue(0))
-                lstImgPath(1).Add(readerFileList.GetString(2))
-                lstImgPath(2).Add(readerFileList.GetValue(5))
-                lstImgPath(3).Add(readerFileList.GetValue(3))
-                lstImgPath(4).Add(readerFileList.GetValue(7))
-            End While
         Catch ex As Exception
             MsgBox(ex.Message)
         Finally
@@ -532,44 +849,38 @@ Public Class FileMoveForm
 
     End Sub
 
+    ''' <summary>
+    ''' イメージリスト作成    ''' 
+    ''' </summary>
+    ''' <param name="iKensakuKbn">
+    ''' 検索区分
+    ''' 0：最終更新日順
+    ''' 1：フォルダ検索（ランク以下）
+    ''' </param>
+    ''' <param name="iRank">ランク</param>
     'イメージリスト作成
     Private Sub ImageListCreate(ByVal iKensakuKbn As Integer, ByVal iRank As Integer)
 
-        TabControl1.SelectedTab = TabPage2
-
-        lstThumbs.Clear()
         Dim readerFileList As OracleDataReader = Nothing
-        lstImgPath(0) = New ArrayList
-        lstImgPath(1) = New ArrayList
-        lstImgPath(2) = New ArrayList
-        lstImgPath(3) = New ArrayList
-        lstImgPath(4) = New ArrayList
-
+        Dim clsFormUtil As New FormUtil(Me)
         Dim lstZokusei = New List(Of String)
 
+        clsFormUtil.AddThumnailClear()
+        lstThumbs.Clear()
+        ilstThumbs.Images.Clear()
+
+        TabControl1.SelectedTab = TabPage2
+
+
+
         '属性チェックを配列に格納
-        Dim chk As CheckBox
-        For i = 1 To 10
-            chk = CType(Controls("chkZoku" & i), CheckBox)
-            If (chk.Checked = True) Then
-                lstZokusei.Add(chk.Text)
-            End If
-        Next
+        clsFormUtil.SetZokusei(lstZokusei)
 
         Try
             clsOraAccess.queryFileListKensaku(iKensakuKbn, lstZokusei, iRank, iNowFolder, readerFileList)
 
-            While (readerFileList.Read())
-                Dim blob As OracleBlob = readerFileList.GetOracleBlob(4)
-                Dim ms As New System.IO.MemoryStream(blob.Value)
-                AddThumnail(New Bitmap(ms), readerFileList.GetValue(0), readerFileList.GetString(1), readerFileList.GetValue(3), readerFileList.GetValue(5))
-
-                lstImgPath(0).Add(readerFileList.GetValue(0))
-                lstImgPath(1).Add(readerFileList.GetString(2))
-                lstImgPath(2).Add(readerFileList.GetValue(5))
-                lstImgPath(3).Add(readerFileList.GetValue(3))
-                lstImgPath(4).Add(readerFileList.GetValue(7))
-            End While
+            clsFormUtil.lstImageListInit(lstImgPath)
+            clsFormUtil.lstImageListSet(lstImgPath, readerFileList, ilstThumbs, lstThumbs)
         Catch ex As Exception
             MsgBox(ex.Message)
         Finally
@@ -578,29 +889,27 @@ Public Class FileMoveForm
 
     End Sub
 
-    'イメージリスト作成
+
+    ''' <summary>
+    ''' イメージリスト作成
+    ''' </summary>
+    ''' <param name="iRank">ランク</param>
+    ''' <param name="sTagName">タグ名</param>
     Private Sub ImageListCreate(ByVal iRank As Integer, ByVal sTagName As String)
+
+        Dim clsFormUtil As New FormUtil(Me)
+        Dim readerFileList As OracleDataReader = Nothing
+        Dim lstZokusei = New List(Of String)
 
         TabControl1.SelectedTab = TabPage2
 
+        clsFormUtil.AddThumnailClear()
         lstThumbs.Clear()
-        Dim readerFileList As OracleDataReader = Nothing
-        lstImgPath(0) = New ArrayList
-        lstImgPath(1) = New ArrayList
-        lstImgPath(2) = New ArrayList
-        lstImgPath(3) = New ArrayList
-        lstImgPath(4) = New ArrayList
+        ilstThumbs.Images.Clear()
 
-        Dim lstZokusei = New List(Of String)
 
         '属性チェックを配列に格納
-        Dim chk As CheckBox
-        For i = 1 To 10
-            chk = CType(Controls("chkZoku" & i), CheckBox)
-            If (chk.Checked = True) Then
-                lstZokusei.Add(chk.Text)
-            End If
-        Next
+        clsFormUtil.SetZokusei(lstZokusei)
 
 
         If (sTagName = "" And lstZokusei.Count = 0) Then
@@ -611,17 +920,9 @@ Public Class FileMoveForm
         Try
             clsOraAccess.queryFileListKensaku(lstZokusei, iRank, sTagName, readerFileList)
 
-            While (readerFileList.Read())
-                Dim blob As OracleBlob = readerFileList.GetOracleBlob(4)
-                Dim ms As New System.IO.MemoryStream(blob.Value)
-                AddThumnail(New Bitmap(ms), readerFileList.GetValue(0), readerFileList.GetString(1), readerFileList.GetValue(3), readerFileList.GetValue(5))
+            clsFormUtil.lstImageListInit(lstImgPath)
+            clsFormUtil.lstImageListSet(lstImgPath, readerFileList, ilstThumbs, lstThumbs)
 
-                lstImgPath(0).Add(readerFileList.GetValue(0))
-                lstImgPath(1).Add(readerFileList.GetString(2))
-                lstImgPath(2).Add(readerFileList.GetValue(5))
-                lstImgPath(3).Add(readerFileList.GetValue(3))
-                lstImgPath(4).Add(readerFileList.GetValue(7))
-            End While
         Catch ex As Exception
             MsgBox(ex.Message)
         Finally
@@ -630,13 +931,61 @@ Public Class FileMoveForm
 
     End Sub
 
-    'ツリービュー作成
+    ''' <summary>
+    ''' イメージリスト作成    ''' 
+    ''' </summary>
+    ''' <param name="iKensakuKbn">
+    ''' 検索区分
+    ''' 0：最終更新日順
+    ''' 1：フォルダ検索（ランク以下）
+    ''' </param>
+    ''' <param name="iRank">ランク</param>
+    'イメージリスト作成
+    Private Sub BookMarkListCreate(ByVal iFileID As Integer)
+
+        Dim clsFormUtil As New FormUtil(Me)
+        Dim readerFileList As OracleDataReader = Nothing
+
+        clsFormUtil.AddThumnailClear()
+        lstBookMark.Clear()
+        ilstBMThumbs.Images.Clear()
+
+
+        Try
+            clsOraAccess.queryBookMarkListKensaku(iFileID, readerFileList)
+
+            clsFormUtil.lstBookMarkPathInit(lstBookMarkPath)
+            clsFormUtil.lstBookMarkPathSet(lstBookMarkPath, readerFileList, ilstBMThumbs, lstBookMark)
+
+
+            'ブックマークデータが無ければ、リストを非表示
+            If readerFileList.HasRows = True Then
+                clsFormUtil.ShowBookMark(True)
+            Else
+                clsFormUtil.ShowBookMark(False)
+            End If
+            'End While
+        Catch ex As Exception
+            MsgBox(ex.Message)
+        Finally
+            readerFileList.Close()
+        End Try
+
+    End Sub
+
+
+    ''' <summary>
+    ''' ツリービュー作成
+    ''' </summary>
+    ''' <param name="sConditionValue">フォルダ名</param>
     Public Sub TreeCreate(ByVal sConditionValue As String)
 
         'Readerを宣言
         Dim readerFolder As OracleDataReader = Nothing
         Dim readerGenre As OracleDataReader = Nothing
         Dim readerSubFolder As OracleDataReader = Nothing
+
+        Console.WriteLine("TreeCreate開始")
 
         'ジャンルを取得
         '検索条件と合致しない場合は、後方１文字ずつ削除して繰り返し検索する。
@@ -719,108 +1068,7 @@ Public Class FileMoveForm
 
     End Sub
 
-    'ZIP書庫情報取得
-    'サムネイルを作成し、ファイルサイズやファイル名を取得
-    Public Sub ZipSamnail(ByVal sPath As String, ByVal iNowId As Integer, ByVal sFileName As String, ByVal lFileSize As Long)
 
-        'ZipFileオブジェクトの作成 
-        Dim zf As ICSharpCode.SharpZipLib.Zip.ZipFile = Nothing
-        Dim zis As ICSharpCode.SharpZipLib.Zip.ZipInputStream = Nothing
-        Dim fs As System.IO.FileStream = Nothing
-        Dim ze As ICSharpCode.SharpZipLib.Zip.ZipEntry = Nothing
-
-        Try
-            zf = New ICSharpCode.SharpZipLib.Zip.ZipFile(sPath)
-
-            'ZIP書庫を読み込む 
-            fs = New System.IO.FileStream(
-                sPath,
-                System.IO.FileMode.Open,
-                System.IO.FileAccess.Read)
-
-            'ZipInputStreamオブジェクトの作成
-            zis = New ICSharpCode.SharpZipLib.Zip.ZipInputStream(fs)
-
-            'ZIP内のエントリを列挙
-            While True
-                'ZipEntryを取得
-                ze = zis.GetNextEntry()
-                If ze Is Nothing Then
-                    Exit While
-                End If
-                '情報を表示する 
-                If ze.IsFile Then
-                    'ファイルのとき 
-                    '閲覧するZIPエントリのStreamを取得 
-                    Dim reader As System.IO.Stream = zf.GetInputStream(ze)
-                    Dim bmp As New Bitmap(reader)
-                    AddThumnail(bmp, iNowId, sFileName, lFileSize, 0) 'ランクの０は仮置き
-                    bmp = Nothing
-                    reader.Close()
-                    Exit While
-                ElseIf ze.IsDirectory Then
-                    'ディレクトリのとき 
-                    'Console.WriteLine("ディレクトリ名 : {0}", ze.Name)
-                    'Console.WriteLine("日時 : {0}", ze.DateTime)
-                    'Console.WriteLine()
-                End If
-            End While
-        Catch ex As Exception
-            MsgBox(ex.Message)
-        Finally
-            '閉じる
-            ze = Nothing
-            zis.Close()
-            fs.Close()
-            zf.Close()
-        End Try
-
-    End Sub
-
-
-    'サムネイル追加
-    Private icount As Integer
-    Private Sub AddThumnail(ByRef bmp As Bitmap, ByVal iNowId As Integer, ByVal sFileName As String, ByVal lFileSize As Long, ByVal lRank As Long)
-
-        Dim width As Integer = 96
-        Dim height As Integer = 96
-
-        ilstThumbs.ImageSize = New Size(width, height)
-        lstThumbs.LargeImageList = ilstThumbs
-
-        Dim original As Image = bmp
-        Dim thumbnail As Image = createThumbnail(original, width, height)
-
-        '一括登録用
-        'clsOraAccess.updateFile(iNowId, thumbnail)
-
-        ilstThumbs.Images.Add(thumbnail)
-        Dim lvi As New ListViewItem(sFileName, icount)
-        lvi.ToolTipText = ChangeFileSize(lFileSize)
-
-        'ランクにより文字背景色をかえる
-        Select Case lRank
-            Case 5
-                lvi.BackColor = Color.Gold
-            Case 4
-                lvi.BackColor = Color.Silver
-            Case 3
-                lvi.BackColor = Color.Orange
-            Case 2
-                lvi.BackColor = Color.Aqua
-            Case 1
-                lvi.BackColor = Color.White
-            Case Else
-                lvi.BackColor = Color.Gray
-        End Select
-
-        '        lvi.BackColor = Color.Aqua
-        lstThumbs.Items.Add(lvi)
-        icount = icount + 1
-        original.Dispose()
-        thumbnail.Dispose()
-
-    End Sub
 
 
     '移動ボタンクリック
@@ -1104,7 +1352,7 @@ Public Class FileMoveForm
 
     'サムネイルダブルクリック
     'Hamana起動
-    Private Sub picThumbs_DoubleClick(sender As Object, e As System.EventArgs) Handles picThumbs.DoubleClick
+    Private Sub picThumbs_Click(sender As Object, e As System.EventArgs) Handles picThumbs.Click
 
         Process.Start("C:\ProgramData\NeeView\NeeView.exe", """" & sFilePath & """")
         'Process.Start("C:\ProgramData\Hamana\Hamana.exe", """" & sFilePath & """")
@@ -1113,7 +1361,7 @@ Public Class FileMoveForm
 
     'イメージリストダブルクリック
     '初期化（ファイルあり）を呼び出し、フォームに情報を表示
-    Private Sub lstThumbs_DoubleClick(sender As Object, e As System.EventArgs) Handles lstThumbs.DoubleClick
+    Private Sub lstThumbs_Click(sender As Object, e As System.EventArgs) Handles lstThumbs.Click
 
         sFilePath = CType(lstImgPath(1)(lstThumbs.SelectedItems(0).Index), String)
 
@@ -1122,30 +1370,26 @@ Public Class FileMoveForm
             lblNowFolder.Text = "同一"
         End If
 
-        'MsgBox("ここで同一ちぇく")
-        ''存在チェック
-        'Dim readerFilePath As OracleDataReader = Nothing
-        'Try
-        '    clsOraAccess.queryFilePath(sFilePath, readerFilePath)
-
-        '    Dim sConditionValue As String = Nothing
-        '    If (readerFilePath.HasRows = False) Then
-
-        '        Dim cnt As Integer = 0
-        '        While (readerFilePath.Read())
-        '            cnt = cnt + 1
-        '            Exit While
-        '        End While
-        '        MsgBox(cnt)
-
-        '    End If
-        'Catch ex As Exception
-        '    MsgBox(ex.Message)
-        'End Try
-
-
         FormInit(sFilePath)
     End Sub
+
+    ''' <summary>
+    ''' ブックマークのイメージリストクリック
+    ''' </summary>
+    ''' <param name="sender"></param>
+    ''' <param name="e"></param>
+    Private Sub lstBookMark_Click(sender As Object, e As EventArgs) Handles lstBookMark.Click
+        sFilePath = CType(lstBookMarkPath(1)(lstBookMark.SelectedItems(0).Index), String)
+
+        If (bKensakuPattern = True) Then
+            'いったんコメント
+            'iNowFolder = lstBookMarkPath(4)(lstBookMark.SelectedItems(0).Index)
+            lblNowFolder.Text = "同一"
+        End If
+
+        BMFormInit(sFilePath)
+    End Sub
+
 
     '更新ボタン　クリック
     '登録ファイルを移動して、ファイルTBL、ファイルタグTBLを更新
@@ -1188,7 +1432,7 @@ Public Class FileMoveForm
                 If (Controls("txtTag" & i).Text <> "") Then
 
                     Dim cmb As ComboBox
-                    cmb = Controls("cmbTag" & i)
+                    cmb = CType(Controls("cmbTag" & i), ComboBox)
 
                     If (cmb.SelectedValue > 0) Then
                         'ファイルタグをTBLに追加　
@@ -1234,6 +1478,153 @@ Public Class FileMoveForm
                 If (TabControl1.SelectedTab Is TabPage2) Then
                     ImageListCreate()
                 End If
+
+                MessageBox.Show("削除が完了しました。")
+            Catch ex As Exception
+                MsgBox(ex.Message)
+            End Try
+        End If
+
+    End Sub
+
+
+
+
+    Private Sub btnBookMarkAdd_Click(sender As Object, e As EventArgs) Handles btnBookMarkAdd.Click
+
+        'ファイルサイズを取得
+        Dim fi As System.IO.FileInfo = New System.IO.FileInfo(sFilePath)
+        Dim lsize As Long = fi.Length
+        fi = Nothing
+
+        Dim clsDBLogic As New DBLogic
+
+        Try
+            'ファイルの存在チェック
+            Dim sAftPath As String = clsOraAccess.queryFolderPath(iNowFolder)
+
+            'ブックマークをTBLに追加
+            iBookMarkId = clsOraAccess.insertBookMark(txtFileName.Text, sBookMarkFileName, iNowFile, lsize, iRank, picThumbs.Image)
+
+            '属性をファイルタグTBLに追加
+            Dim chk As CheckBox
+            For i = 1 To 10
+                chk = CType(Controls("chkZoku" & i), CheckBox)
+                If (chk.Checked = True) Then
+                    clsDBLogic.insertFileTag(clsOraAccess, 5, chk.Text, iBookMarkId, 3)
+                End If
+            Next
+
+            'タグをファイルタグTBLに追加
+            For i = 1 To 9
+                If (Controls("txtTag" & i).Text <> "") Then
+
+                    Dim cmb As ComboBox
+                    cmb = CType(Controls("cmbTag" & i), ComboBox)
+                    If (cmb.SelectedValue > 0) Then
+                        'ファイルタグをTBLに追加
+                        clsDBLogic.insertFileTag(clsOraAccess, cmb.SelectedValue, Controls("txtTag" & i).Text, iBookMarkId, 3)
+                    End If
+                End If
+            Next
+
+            'Process.Start("C:\ProgramData\NeeView\NeeView.exe", """" & sAftPath & txtFileName.Text & ".zip""")
+
+            BookMarkListCreate(iNowFile)
+
+
+            With Me.NotifyIcon1
+                .Icon = SystemIcons.Application
+                .Visible = True
+                .BalloonTipTitle = "FileMove"
+                .BalloonTipText = "ブックマークの追加が完了しました。"
+                .BalloonTipIcon = ToolTipIcon.Info
+                .ShowBalloonTip(3000)
+            End With
+
+        Catch ex As Exception
+            MsgBox(ex.Message)
+        Finally
+        End Try
+    End Sub
+
+    ''' <summary>
+    ''' ブクマ更新ボタン押下時の処理
+    ''' </summary>
+    ''' <param name="sender"></param>
+    ''' <param name="e"></param>
+    Private Sub btnBookMarkUpdate_Click(sender As Object, e As EventArgs) Handles btnBookMarkUpdate.Click
+
+        Try
+            Dim clsDBLogic As New DBLogic
+
+            'ファイルをTBLに追加
+            clsOraAccess.updateBookMark(iBookMarkId, iNowFile, txtFileName.Text, sBookMarkFileName, iRank, picThumbs.Image)
+
+            'ファイルタグをTBLから削除
+            clsDBLogic.delFileTag(clsOraAccess, iBookMarkId, 3)
+
+            '属性をファイルタグTBLに追加
+            Dim chk As CheckBox
+            For i = 1 To 10
+                chk = CType(Controls("chkZoku" & i), CheckBox)
+                If (chk.Checked = True) Then
+                    clsDBLogic.insertFileTag(clsOraAccess, 5, chk.Text, iBookMarkId, 3)
+                End If
+            Next
+
+            'プルダウンの選択値を取得し、ファイルタグをTBLに追加
+            For i = 1 To 9
+                If (Controls("txtTag" & i).Text <> "") Then
+
+                    Dim cmb As ComboBox
+                    cmb = CType(Controls("cmbTag" & i), ComboBox)
+
+                    If (cmb.SelectedValue > 0) Then
+                        'ファイルタグをTBLに追加　
+                        clsDBLogic.insertFileTag(clsOraAccess, cmb.SelectedValue, Controls("txtTag" & i).Text, iBookMarkId, 3)
+                    End If
+                End If
+            Next
+            If (TabControl1.SelectedTab Is TabPage2 And
+                bKensakuPattern = False) Then
+                ImageListCreate()
+            End If
+
+            With Me.NotifyIcon1
+                .Icon = SystemIcons.Application
+                .Visible = True
+                .BalloonTipTitle = "FileMove"
+                .BalloonTipText = "ブックマークの更新が完了しました。"
+                .BalloonTipIcon = ToolTipIcon.Info
+                .ShowBalloonTip(3000)
+            End With
+
+            'MessageBox.Show("ファイルの更新が完了しました。")
+
+        Catch ex As Exception
+            MsgBox(ex.Message)
+        End Try
+    End Sub
+
+    ''' <summary>
+    ''' ブクマ削除ボタン押下時
+    ''' ファイルタグテーブル、ファイルタグ紐づけテーブル、ファイルタグテーブルのレコードを削除
+    ''' </summary>
+    ''' <param name="sender"></param>
+    ''' <param name="e"></param>
+
+    Private Sub btnBookMarkDel_Click(sender As Object, e As EventArgs) Handles btnBookMarkDel.Click
+
+        If (MsgBox("削除しますか？" & vbCrLf & vbCrLf & sFilePath, vbYesNo) = vbYes) Then
+
+            Dim clsDBLogic As New DBLogic
+
+            Try
+                clsDBLogic.delFileTag(clsOraAccess, iBookMarkId, 3)
+                clsOraAccess.deleteBookMark(iBookMarkId)
+
+                BookMarkListCreate(iNowFile)
 
                 MessageBox.Show("削除が完了しました。")
             Catch ex As Exception
@@ -1291,9 +1682,9 @@ Public Class FileMoveForm
                 If (Controls("txtTag" & i).Text <> "") Then
 
                     Dim cmb As ComboBox
-                    cmb = Controls("cmbTag" & i)
+                    cmb = CType(Controls("cmbTag" & i), ComboBox)
 
-                    If (cmb.SelectedValue > 0) Then
+                    If cmb.SelectedValue > 0 Then
                         'フォルダタグをTBLに追加
                         clsDBLogic.insertFileTag(clsOraAccess, cmb.SelectedValue, Controls("txtTag" & i).Text, iNowFolder, 2)
                     End If
@@ -1346,68 +1737,6 @@ Public Class FileMoveForm
 
     End Sub
 
-    'プルダウンの色を設定
-    Private Sub cmbRank_DrawItem(sender As Object, e As System.Windows.Forms.DrawItemEventArgs)
-
-        If e.Index = -1 Then Exit Sub
-
-        Dim Combo As ComboBox = sender
-        Dim TextBrush As Brush = Brushes.Black
-        Dim TextString As String = Combo.Items(e.Index).ToString
-        Dim BackColor As Color
-
-        Dim TextRect As RectangleF  '文字領域の設定
-
-        With TextRect
-            .X = e.Bounds.X
-            .Y = e.Bounds.Y
-            .Width = e.Bounds.Width
-            .Height = e.Bounds.Height
-        End With
-
-        e.DrawBackground() 'フォーカス背景色描画用
-
-
-        Select Case TextString
-
-
-            Case 5
-                BackColor = Color.Gold
-            Case 4
-                BackColor = Color.Silver
-            Case 3
-                BackColor = Color.Orange
-            Case 2
-                BackColor = Color.Aqua
-            Case 1
-                BackColor = Color.White
-            Case Else
-                BackColor = Color.Gray
-
-                'Case 10
-                '    BackColor = Color.Gold
-                'Case 9
-                '    BackColor = Color.Silver
-                'Case 8
-                '    BackColor = Color.Orange
-                'Case 7
-                '    BackColor = Color.Aqua
-                'Case 6
-                '    BackColor = Color.YellowGreen
-                'Case 5
-                '    BackColor = Color.White
-                'Case Else
-                '    BackColor = Color.Gray
-        End Select
-
-        e.Graphics.FillRectangle(New SolidBrush(BackColor), TextRect)
-
-
-        '文字の描画
-        e.Graphics.DrawString(TextString, e.Font, TextBrush, TextRect)
-        e.DrawFocusRectangle()  'フォーカス背景色描画用
-
-    End Sub
 
     'テンキー押下時にランクのプルダウンを変える
 
@@ -1435,7 +1764,7 @@ Public Class FileMoveForm
 
         Dim pic As PictureBox
         For i = 1 To iIdx
-            pic = Controls("picRank" & i)
+            pic = CType(Controls("picRank" & i), PictureBox)
             pic.Image = imgBlack
         Next
 
@@ -1623,7 +1952,7 @@ Public Class FileMoveForm
 
         Dim pic As PictureBox
         For i = 0 To 5
-            pic = Controls("picRank" & i)
+            pic = CType(Controls("picRank" & i), PictureBox)
             If i <> 0 Then
                 pic.Image = imgBlack
             End If
@@ -1636,16 +1965,123 @@ Public Class FileMoveForm
 
     End Sub
 
-    Private Sub CheckBox1_CheckedChanged(sender As Object, e As EventArgs) Handles CheckBox1.CheckedChanged
-        If (sender.checked = True) Then
-            lstBookMark.Hide()
-            TableLayoutPanel1.SetRowSpan(TabControl1, 4)
-        Else
-            lstBookMark.Show()
-            TableLayoutPanel1.SetRowSpan(TabControl1, 1)
-        End If
+    'コンボボックスの自動設定
+    'タグのテキストボックスからフォーカスアウト時に、コンボボックス設定値を自動で取得する
+    Private Sub txtTag_Leave(sender As Object, e As EventArgs) Handles txtTag1.Leave, txtTag2.Leave, txtTag3.Leave, txtTag4.Leave, txtTag5.Leave, txtTag6.Leave, txtTag7.Leave, txtTag8.Leave, txtTag9.Leave
 
+
+        Dim txt As TextBox = CType(sender, TextBox)
+        Dim iCategory As Integer
+
+        For i = 1 To 9
+
+            If txt.Name = "txtTag" & i Then
+                If txt.Text <> "" Then
+
+                    iCategory = clsOraAccess.queryDefaultCategory(txt.Text)
+
+                    Dim cmb As ComboBox = CType(Controls("cmbTag" & i), ComboBox)
+                    cmb.SelectedIndex = iCategory
+
+                    Exit For
+                End If
+            End If
+        Next
     End Sub
+
+    'コンボボックスの自動設定
+    'タグのテキストボックスからフォーカスアウト時に、コンボボックス設定値を自動で取得する
+    'Private Sub txtTag_TextChanged(sender As Object, e As EventArgs) Handles txtTag1.TextChanged, txtTag2.TextChanged, txtTag3.TextChanged, txtTag4.TextChanged, txtTag5.TextChanged, txtTag6.TextChanged, txtTag7.TextChanged, txtTag8.TextChanged, txtTag9.TextChanged
+
+
+    '    Dim txt As TextBox = CType(sender, TextBox)
+    '    Dim readerTagList As OracleDataReader
+    '    Dim autoCompList As New AutoCompleteStringCollection
+
+
+    '    For i = 1 To 9
+
+    '        If txt.Name = "txtTag" & i Then
+    '            If txt.Text <> "" Then
+
+    '                txt.AutoCompleteMode = Windows.Forms.AutoCompleteMode.Suggest           ' サジェストモード
+    '                txt.AutoCompleteSource = Windows.Forms.AutoCompleteSource.CustomSource 　　　' カスタムソースに指定
+
+    '                clsOraAccess.queryTagList(txt.Text, readerTagList)
+    '                While (readerTagList.Read())
+    '                    autoCompList.Add(readerTagList.GetString(0))
+    '                End While
+
+    '                txt.AutoCompleteCustomSource = autoCompList
+
+
+    '            End If
+    '        End If
+    '    Next
+    'End Sub
+
+    'Private Sub ComboBox1_TextChanged(sender As Object, e As EventArgs)
+
+
+    '    Dim txt As ComboBox = CType(sender, ComboBox)
+    '    Dim readerTagList As OracleDataReader
+    '    Dim autoCompList As New AutoCompleteStringCollection
+
+    '    Dim tabTbl(1) As DataTable
+
+    '    clsOraAccess.queryTagList(txt.Text, readerTagList)
+
+    '    For i = 0 To 0
+    '        tabTbl(i) = New DataTable
+
+    '        'tabTbl(i).Columns.Add("ID", GetType(Integer))
+    '        tabTbl(i).Columns.Add("NAME", GetType(String))
+    '    Next
+
+    '    While (readerTagList.Read())
+
+    '        For i = 0 To 0
+    '            '新規行作成
+    '            Dim row As DataRow = tabTbl(i).NewRow()
+
+    '            '各行に値をセット
+    '            'row("ID") = readerTagList.GetValue(0)
+    '            row("NAME") = readerTagList.GetString(0)
+    '            tabTbl(i).Rows.Add(row)
+    '        Next
+    '    End While
+
+    '    Dim cmb As ComboBox
+    '    For i = 0 To 0
+    '        tabTbl(i).AcceptChanges()
+    '        cmb = CType(Controls("ComboBox" & i + 1), ComboBox)
+    '        cmb.DataSource = tabTbl(i)
+    '        cmb.DisplayMember = "NAME"
+    '        'cmb.ValueMember = "ID"
+    '    Next
+
+
+    '    'For i = 1 To 1
+
+    '    '    If txt.Name = "ComboBox" & i Then
+    '    '        If txt.Text <> "" Then
+
+    '    '            txt.AutoCompleteMode = Windows.Forms.AutoCompleteMode.Suggest           ' サジェストモード
+    '    '            txt.AutoCompleteSource = Windows.Forms.AutoCompleteSource.CustomSource 　　　' カスタムソースに指定
+
+    '    '            clsOraAccess.queryTagList(txt.Text, readerTagList)
+    '    '            While (readerTagList.Read())
+    '    '                autoCompList.Add(readerTagList.GetString(0))
+    '    '            End While
+
+    '    '            txt.AutoCompleteCustomSource = autoCompList
+
+
+    '    '        End If
+    '    '    End If
+    '    'Next
+
+    'End Sub
 End Class
 
 

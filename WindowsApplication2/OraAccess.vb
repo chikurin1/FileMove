@@ -99,6 +99,12 @@ Public Class OraAccess
                                 "where TAG_ID =:TAG_ID and FOLDER_ID = :FOLDER_ID and FILE_KBN = 2 and rownum = 1 " &
                                 "order by HIMO_ID "
                 cmd.Parameters.Add(New OracleParameter("FOLDER_ID", iFileFolderId))
+            Case 3
+                'パラメータで取得したカテゴリ、タイトルを条件に、ファイルタグテーブルを参照しファイルタグIDを取得
+                sFileTagHimoSelectSql = "select HIMO_ID from FILE_TAG_HIMO_TBL " &
+                                "where TAG_ID =:TAG_ID and BOOKMARK_ID = :BOOKMARK_ID and FILE_KBN = 3 and rownum = 1 " &
+                                "order by HIMO_ID "
+                cmd.Parameters.Add(New OracleParameter("BOOKMARK_ID", iFileFolderId))
         End Select
 
 
@@ -120,6 +126,7 @@ Public Class OraAccess
 
         Dim sFileTagHimoSelectSql As String = Nothing
         Dim iFileTagHimoId As Integer
+        Dim iFileTagCount As integer
 
         'パラメータで取得したカテゴリ、タイトルを条件に、ファイルタグテーブルを参照しファイルタグIDを取得
         sFileTagHimoSelectSql = "select count(HIMO_ID) from FILE_TAG_HIMO_TBL " &
@@ -129,8 +136,8 @@ Public Class OraAccess
         cmd.Parameters.Clear()
         cmd.Parameters.Add(New OracleParameter("TAG_ID", iFileTagId))
 
-        If (Integer.TryParse(cmd.ExecuteScalar(), iFileTagHimoId)) Then
-            Return iFileTagHimoId
+        If Integer.TryParse(cmd.ExecuteScalar(), iFileTagCount) <> 0 Then
+            Return iFileTagCount
         Else
             Return -1
         End If
@@ -147,17 +154,20 @@ Public Class OraAccess
         cmd.Parameters.Clear()
 
 
-        If (iFile_Kbn = 1) Then
-            syFileTagQuery = "select TAG_ID,HIMO_ID from FILE_TAG_HIMO_TBL " &
-                         "where FILE_ID = :FILE_ID and FILE_KBN = :FILE_KBN "
-
-            cmd.Parameters.Add(New OracleParameter("FILE_ID", iFileFolderId))
-
-        ElseIf iFile_Kbn = 2 Then
-            syFileTagQuery = "select TAG_ID,HIMO_ID from FILE_TAG_HIMO_TBL " &
-                         "where FOLDER_ID = :FOLDER_ID and FILE_KBN = :FILE_KBN "
-            cmd.Parameters.Add(New OracleParameter("FOLDER_ID", iFileFolderId))
-        End If
+        Select Case iFile_Kbn
+            Case 1
+                syFileTagQuery = "select TAG_ID,HIMO_ID from FILE_TAG_HIMO_TBL " &
+                            "where FILE_ID = :FILE_ID and FILE_KBN = :FILE_KBN "
+                cmd.Parameters.Add(New OracleParameter("FILE_ID", iFileFolderId))
+            Case 2
+                syFileTagQuery = "select TAG_ID,HIMO_ID from FILE_TAG_HIMO_TBL " &
+                             "where FOLDER_ID = :FOLDER_ID and FILE_KBN = :FILE_KBN "
+                cmd.Parameters.Add(New OracleParameter("FOLDER_ID", iFileFolderId))
+            Case 3
+                syFileTagQuery = "select TAG_ID,HIMO_ID from FILE_TAG_HIMO_TBL " &
+                            "where BOOKMARK_ID = :BOOKMARK_ID and FILE_KBN = :FILE_KBN "
+                cmd.Parameters.Add(New OracleParameter("BOOKMARK_ID", iFileFolderId))
+        End Select
 
         cmd.CommandText = syFileTagQuery
         cmd.Parameters.Add(New OracleParameter("FILE_KBN", iFile_Kbn))
@@ -176,17 +186,23 @@ Public Class OraAccess
         cmd.Parameters.Clear()
 
 
-        If (iFile_Kbn = 1) Then
-            syFileTagQuery = "select B.CATEGORY,B.FILE_TAG_NAME from FILE_TAG_HIMO_TBL A,FILE_TAG_TBL B " &
+        Select Case iFile_Kbn
+            Case 1
+
+                syFileTagQuery = "select B.CATEGORY,B.FILE_TAG_NAME from FILE_TAG_HIMO_TBL A,FILE_TAG_TBL B " &
                          "where A.TAG_ID = B.FILE_TAG_ID and FILE_ID = :FILE_ID and FILE_KBN = :FILE_KBN "
 
-            cmd.Parameters.Add(New OracleParameter("FILE_ID", iFileFolderId))
+                cmd.Parameters.Add(New OracleParameter("FILE_ID", iFileFolderId))
 
-        ElseIf iFile_Kbn = 2 Then
-            syFileTagQuery = "select B.CATEGORY,B.FILE_TAG_NAME from FILE_TAG_HIMO_TBL A,FILE_TAG_TBL B " &
-                         "where A.TAG_ID = B.FILE_TAG_ID and A.FOLDER_ID = :FOLDER_ID and A.FILE_KBN = :FILE_KBN "
-            cmd.Parameters.Add(New OracleParameter("FOLDER_ID", iFileFolderId))
-        End If
+            Case 2
+                syFileTagQuery = "select B.CATEGORY,B.FILE_TAG_NAME from FILE_TAG_HIMO_TBL A,FILE_TAG_TBL B " &
+                             "where A.TAG_ID = B.FILE_TAG_ID and A.FOLDER_ID = :FOLDER_ID and A.FILE_KBN = :FILE_KBN "
+                cmd.Parameters.Add(New OracleParameter("FOLDER_ID", iFileFolderId))
+            Case 3
+                syFileTagQuery = "select B.CATEGORY,B.FILE_TAG_NAME from FILE_TAG_HIMO_TBL A,FILE_TAG_TBL B " &
+                             "where A.TAG_ID = B.FILE_TAG_ID and A.BOOKMARK_ID = :BOOKMARK_ID and A.FILE_KBN = :FILE_KBN "
+                cmd.Parameters.Add(New OracleParameter("BOOKMARK_ID", iFileFolderId))
+        End Select
 
         cmd.CommandText = syFileTagQuery
         cmd.Parameters.Add(New OracleParameter("FILE_KBN", iFile_Kbn))
@@ -282,17 +298,7 @@ Public Class OraAccess
 
         Dim sFileListQuery As String = Nothing
 
-        'sFileListQuery = "SELECT A.ID, A.TITLE, C.PATH || '\' || B.PATH || '\' || A.PATH AS A ,A.FILE_SIZE " & _
-        '            "FROM FILE_TBL A ,FOLDER_TBL B ,GENRE_TBL C " & _
-        '            "WHERE B.GENRE_ID = C.ID AND A.FOLDER_ID = B.ID AND " & _
-        '            "A.FOLDER_ID = " & iCondition & " " & _
-        '            "UNION " & _
-        '            "SELECT A.ID, A.TITLE, D.PATH || '\' || C.PATH || '\' || B.PATH || '\' || A.PATH AS A ,A.FILE_SIZE " & _
-        '            "FROM FILE_TBL A ,FOLDER_TBL B ,FOLDER_TBL C ,GENRE_TBL D " & _
-        '            "WHERE C.GENRE_ID = D.ID AND B.PARENT_FOLDER_ID = C.ID AND A.FOLDER_ID = B.ID AND " & _
-        '            "A.FOLDER_ID = " & iCondition
-
-        'BLOBでサムネイルを取得
+        'フォルダ検索
         sFileListQuery = "SELECT A.ID, A.TITLE, C.PATH || '\' || B.PATH || '\' || A.PATH AS A ,A.FILE_SIZE ,A.THUMBNAIL ,A.RANK ,A.ADD_DATE ,A.FOLDER_ID " &
             "FROM FILE_TBL A ,FOLDER_TBL B ,GENRE_TBL C " &
             "WHERE B.GENRE_ID = C.ID AND A.FOLDER_ID = B.ID AND " &
@@ -302,16 +308,6 @@ Public Class OraAccess
             "FROM FILE_TBL A ,FOLDER_TBL B ,FOLDER_TBL C ,GENRE_TBL D " &
             "WHERE C.GENRE_ID = D.ID AND B.PARENT_FOLDER_ID = C.ID AND A.FOLDER_ID = B.ID AND " &
             "A.FOLDER_ID = " & iCondition & " ORDER BY TITLE "
-
-
-        '全件取得
-        'sFileListQuery = "SELECT A.ID, A.TITLE, C.PATH || '\' || B.PATH || '\' || A.PATH AS A ,A.FILE_SIZE ,A.THUMBNAIL " & _
-        '    "FROM FILE_TBL A ,FOLDER_TBL B ,GENRE_TBL C " & _
-        '    "WHERE B.GENRE_ID = C.ID AND A.FOLDER_ID = B.ID " & _
-        '    "UNION ALL " & _
-        '    "SELECT A.ID, A.TITLE, D.PATH || '\' || C.PATH || '\' || B.PATH || '\' || A.PATH AS A ,A.FILE_SIZE,A.THUMBNAIL " & _
-        '    "FROM FILE_TBL A ,FOLDER_TBL B ,FOLDER_TBL C ,GENRE_TBL D " & _
-        '    "WHERE C.GENRE_ID = D.ID AND B.PARENT_FOLDER_ID = C.ID AND A.FOLDER_ID = B.ID"
 
         cmd.CommandText = sFileListQuery
 
@@ -401,7 +397,7 @@ Public Class OraAccess
     End Function
 
     'ファイルの一覧を取得
-    'iKensakuKbn　検索区分（フォルダ検索（ランク以下）
+    '属性
     'iRank　ランク
     'sTagName　タグ名
     '条件に一致するファイルテーブルのID,ファイル名、パス、サイズ、画像、ランク、追加日、フォルダIDの一覧を取得
@@ -479,6 +475,120 @@ Public Class OraAccess
     End Function
 
 
+    ''' <summary>
+    ''' ブックマークの一覧を取得(ファイルIDキー）
+    ''' 条件に一致するブックマークテーブルのID,ファイル名、パス、サイズ、画像、ランク、追加日、ファイルIDの一覧を取得 
+    ''' </summary>
+    ''' <param name="iFileID">ファイルID</param>
+    ''' <param name="reader">DataReader</param>
+    ''' <returns>0</returns>
+    Public Function queryBookMarkListKensaku(ByVal iFileID As Integer, ByRef reader As OracleDataReader) As Integer
+
+        Dim sBookMarkListQuery As String = Nothing
+
+        'タグSQL作成
+        sBookMarkListQuery = "SELECT A.ID, D.TITLE, C.PATH || '\' || B.PATH || '\' || A.PATH || '\' || D.PATH AS A ,D.FILE_SIZE ,D.THUMBNAIL ,D.RANK ,D.ADD_DATE,A.FOLDER_ID ,D.BOOKMARK_ID ,D.PATH " &
+                                "FROM FILE_TBL A ,FOLDER_TBL B ,GENRE_TBL C ,BOOKMARK_TBL D " &
+                                "WHERE B.GENRE_ID = C.ID And A.FOLDER_ID = B.ID And D.FILE_ID = A.ID and D.FILE_ID = " & iFileID & " " &
+                            "UNION ALL " &
+                            "SELECT A.ID, E.TITLE, D.PATH || '\' || C.PATH || '\' || B.PATH || '\' || A.PATH || '\' || E.PATH AS A ,E.FILE_SIZE ,E.THUMBNAIL ,E.RANK ,E.ADD_DATE,A.FOLDER_ID ,E.BOOKMARK_ID ,E.PATH " &
+                                "FROM FILE_TBL A ,FOLDER_TBL B ,FOLDER_TBL C ,GENRE_TBL D ,BOOKMARK_TBL E " &
+                                "WHERE C.GENRE_ID = D.ID AND B.PARENT_FOLDER_ID = C.ID AND A.FOLDER_ID = B.ID AND E.FILE_ID = A.ID AND E.FILE_ID  =" & iFileID & " "
+        '"order by A desc"
+
+        Console.WriteLine(sBookMarkListQuery)
+        cmd.CommandText = sBookMarkListQuery
+        'cmd.Parameters.Add(New OracleParameter("FILE_ID", iFileID))
+        reader = cmd.ExecuteReader()
+
+        Return 0
+
+    End Function
+
+    'ファイル
+    '属性
+    'iRank　ランク
+    'sTagName　タグ名
+    '
+    ''' <summary>
+    ''' ブックマークの一覧を取得（タグ名）
+    ''' 条件に一致するブックマークテーブルのID,ファイル名、パス、サイズ、画像、ランク、追加日、ファイルIDの一覧を取得 
+    ''' </summary>
+    ''' <param name="lstZokusei">属性の配列</param>
+    ''' <param name="iRank">ランク</param>
+    ''' <param name="sTagName">タグ名</param>
+    ''' <param name="reader">DataReader</param>
+    ''' <returns></returns>
+    Public Function queryBookMarkListKensaku(ByRef lstZokusei As List(Of String), ByVal iRank As Integer, ByVal sTagName As String, ByRef reader As OracleDataReader) As Integer
+
+        Dim sBookMarkListQuery As String = Nothing
+        Dim sTagCondition As String = Nothing
+        Dim sZokuCondition As String = Nothing
+
+
+        'タグSQL作成
+        If (sTagName <> "") Then
+            sTagCondition =
+            "select E.BOOKMARK_ID from FILE_TAG_TBL A,FILE_TAG_HIMO_TBL B ,FOLDER_TBL C ,FILE_TBL D ,BOOKMARK_TBL E " &
+            "where A.FILE_TAG_ID = B.TAG_ID And B.FOLDER_ID = C.ID And C.ID = D.FOLDER_ID and B.FILE_KBN = 3 and D.ID = E.FILE_ID and A.FILE_TAG_NAME like '" & sTagName & "%'" &
+            "union " &
+            "select E.BOOKMARK_ID from FILE_TAG_TBL A, FILE_TAG_HIMO_TBL B, FOLDER_TBL C , FILE_TBL D, BOOKMARK_TBL E " &
+            "where A.FILE_TAG_ID = B.TAG_ID And C.ID = D.FOLDER_ID And B.FOLDER_ID = C.PARENT_FOLDER_ID and B.FILE_KBN = 3 and D.ID = E.FILE_ID and A.FILE_TAG_NAME like '" & sTagName & "%'"
+        End If
+
+        '属性SQL作成
+        Dim i As Integer
+        For Each sZokusei In lstZokusei
+            If (i > 0) Then
+                sZokuCondition = sZokuCondition & " and B.FILE_ID in ( "
+            End If
+            If (sTagName = "") Then
+                sZokuCondition = sZokuCondition & "select B.BOOKMARK_ID from FILE_TAG_TBL A,FILE_TAG_HIMO_TBL B " &
+                                                "where A.FILE_TAG_ID = B.TAG_ID and A.CATEGORY = 5 and a.FILE_TAG_NAME = '" & sZokusei & "'"
+            Else
+                sZokuCondition = sZokuCondition & "select B.BOOKMARK_ID from FILE_TAG_TBL A,FILE_TAG_HIMO_TBL B,tmp T " &
+                                                "where A.FILE_TAG_ID = B.TAG_ID and T.FILE_ID = B.FILE_ID and A.CATEGORY = 5 and a.FILE_TAG_NAME = '" & sZokusei & "'"
+            End If
+            i = i + 1
+        Next
+
+        If (i > 1) Then
+            For ii = 2 To i
+                sZokuCondition = sZokuCondition & ")"
+            Next
+        End If
+
+
+
+        If (sTagName <> "" And lstZokusei.Count > 0) Then
+            'タグあり、属性ありの場合
+            sBookMarkListQuery = "with tmp as(" & sTagCondition & ") ,tmp2 as(" & sZokuCondition & ")"
+        ElseIf (sTagName <> "" And lstZokusei.Count = 0) Then
+            'タグあり、属性なしの場合
+            sBookMarkListQuery = "with tmp2 as(" & sTagCondition & ") "
+        ElseIf (sTagName = "" And lstZokusei.Count > 0) Then
+            'タグなし、属性ありの場合
+            sBookMarkListQuery = "with tmp2 as(" & sZokuCondition & ")"
+        End If
+
+        sBookMarkListQuery = sBookMarkListQuery &
+                        "select D..BOOKMARK_ID, A.TITLE, C.PATH || '\' || B.PATH || '\' || A.PATH || '\' || D.PATH AS A ,D.FILE_SIZE ,D.THUMBNAIL ,D.RANK ,D.ADD_DATE ,D.FILE_ID ,D.PATH " &
+                        "from FILE_TBL A , FOLDER_TBL B , GENRE_TBL C ,BOOKMARK_TBL D, tmp2 T " &
+                        "where B.GENRE_ID = C.ID and A.FOLDER_ID = B.ID and A.ID = D.FILE_ID and D.BOOKMARK_ID In T.BOOKMARK_ID and D.RANK >= " & iRank & " " &
+                        "union all " &
+                        "select E.BOOKMARK_ID, A.TITLE, D.PATH || '\' || C.PATH || '\' || B.PATH || '\' || A.PATH || '\' || D.PATH || '\' || E.PATH AS A ,E.FILE_SIZE ,E.THUMBNAIL ,E.RANK ,E.ADD_DATE ,E.FILE_ID ,E.PATH " &
+                        "from FILE_TBL A , FOLDER_TBL B , FOLDER_TBL C , GENRE_TBL D ,BOOKMARK_TBL E, tmp2 T " &
+                        "where C.GENRE_ID = D.ID and B.PARENT_FOLDER_ID = C.ID and A.FOLDER_ID = B.ID A.ID = E.FILE_ID and E.BOOKMARK_ID In T.BOOKMARK_ID and E.RANK >= " & iRank & " " &
+                        "order by RANK desc"
+
+        Console.WriteLine(sBookMarkListQuery)
+        cmd.CommandText = sBookMarkListQuery
+
+        reader = cmd.ExecuteReader()
+
+        Return 0
+
+    End Function
 
     'パスからファイルを取得
     'sPath　パス
@@ -490,12 +600,12 @@ Public Class OraAccess
         sFilePathQuery = "SELECT A.ID, A.TITLE, C.PATH || '\' || B.PATH || '\' || A.PATH AS A ,A.FILE_SIZE ,A.THUMBNAIL ,A.RANK ,A.FOLDER_ID ,B.TITLE AS NOW_FOLDER, B.TITLE AS PARENT_TITLE " &
                             "FROM FILE_TBL A ,FOLDER_TBL B ,GENRE_TBL C " &
                             "WHERE B.GENRE_ID = C.ID And A.FOLDER_ID = B.ID And " &
-                            "C.PATH || '\' || B.PATH || '\' || A.PATH  = ':FILEPATH' " &
+                            "C.PATH || '\' || B.PATH || '\' || A.PATH  = :FILEPATH " &
                         "UNION ALL " &
                         "SELECT A.ID, A.TITLE, D.PATH || '\' || C.PATH || '\' || B.PATH || '\' || A.PATH AS A ,A.FILE_SIZE ,A.THUMBNAIL ,A.RANK ,A.FOLDER_ID ,B.TITLE AS NOW_FOLDER ,C.TITLE AS PARENT_TITLE " &
                             "FROM FILE_TBL A ,FOLDER_TBL B ,FOLDER_TBL C ,GENRE_TBL D " &
                             "WHERE C.GENRE_ID = D.ID AND B.PARENT_FOLDER_ID = C.ID AND A.FOLDER_ID = B.ID AND " &
-                             "D.PATH || '\' || C.PATH || '\' || B.PATH || '\' || A.PATH = ':FILEPATH'"
+                             "D.PATH || '\' || C.PATH || '\' || B.PATH || '\' || A.PATH = :FILEPATH"
 
         Console.WriteLine(sFilePathQuery)
 
@@ -508,22 +618,22 @@ Public Class OraAccess
 
     End Function
 
-    'パスからファイルを取得
+    'パスからブックマークを取得
     'sPath　パス
     '条件に一致するファイルテーブルのID,ファイル名、パス、サイズ、画像、ランク、追加日、フォルダIDの一覧を取得
     Public Function queryBookMarkPath(ByVal sPath As String, ByRef reader As OracleDataReader) As Integer
 
         Dim sFilePathQuery As String = Nothing
 
-        sFilePathQuery = "SELECT D.BOOKMARK_ID AS ID, D.TITLE, C.PATH || '\' || B.PATH || '\' || A.PATH || '\' || D.PATH AS A ,D.FILE_SIZE ,D.THUMBNAIL ,D.RANK ,A.FOLDER_ID ,B.TITLE AS NOW_FOLDER, B.TITLE AS PARENT_TITLE " &
+        sFilePathQuery = "SELECT A.ID, D.TITLE, C.PATH || '\' || B.PATH || '\' || A.PATH || '\' || D.PATH AS A ,D.FILE_SIZE ,D.THUMBNAIL ,D.RANK ,A.FOLDER_ID ,D.BOOKMARK_ID,D.PATH " &
                             "FROM FILE_TBL A ,FOLDER_TBL B ,GENRE_TBL C ,BOOKMARK_TBL D " &
                             "WHERE B.GENRE_ID = C.ID And A.FOLDER_ID = B.ID And D.FILE_ID = A.ID and " &
-                            "C.PATH || '\' || B.PATH || '\' || A.PATH  || '\' || D.PATH = ':FILEPATH' " &
+                            "C.PATH || '\' || B.PATH || '\' || A.PATH  || '\' || D.PATH = :FILEPATH " &
                         "UNION ALL " &
-                        "SELECT E.BOOKMARK_ID AS ID, E.TITLE, D.PATH || '\' || C.PATH || '\' || B.PATH || '\' || A.PATH || '\' || E.PATH AS A ,E.FILE_SIZE ,E.THUMBNAIL ,E.RANK ,A.FOLDER_ID ,B.TITLE AS NOW_FOLDER ,C.TITLE AS PARENT_TITLE " &
+                        "SELECT A.ID, E.TITLE, D.PATH || '\' || C.PATH || '\' || B.PATH || '\' || A.PATH || '\' || E.PATH AS A ,E.FILE_SIZE ,E.THUMBNAIL ,E.RANK ,A.FOLDER_ID ,E.BOOKMARK_ID,E.PATH " &
                             "FROM FILE_TBL A ,FOLDER_TBL B ,FOLDER_TBL C ,GENRE_TBL D ,BOOKMARK_TBL E " &
                             "WHERE C.GENRE_ID = D.ID AND B.PARENT_FOLDER_ID = C.ID AND A.FOLDER_ID = B.ID AND E.FILE_ID = A.ID AND " &
-                             "D.PATH || '\' || C.PATH || '\' || B.PATH || '\' || A.PATH || '\' || E.PATH = ':FILEPATH'"
+                             "D.PATH || '\' || C.PATH || '\' || B.PATH || '\' || A.PATH || '\' || E.PATH = :FILEPATH"
 
 
         Console.WriteLine(sFilePathQuery)
@@ -605,6 +715,30 @@ Public Class OraAccess
         cmd.CommandText = sZokuseiQuery
         cmd.Parameters.Clear()
         cmd.Parameters.Add(New OracleParameter("COUNT", iCount))
+        reader = cmd.ExecuteReader()
+
+        Return 0
+
+    End Function
+
+
+    'ファイルタグ名の一覧をを取得 
+    'sTagName　ファイルタグ名
+    'ファイルタグタグテーブルからファイルタグ名をキーにファイルタグＩＤを取得し、取得したファイルタグIＤをキーにファイルタグ紐づけテーブルを検索し、最も登録されているカテゴリを返却
+    Public Function queryTagList(ByVal sTagName As String, ByRef reader As OracleDataReader) As Integer
+
+        Dim sTagListQuery As String = Nothing
+
+
+        sTagListQuery =
+                                "select A.FILE_TAG_NAME from FILE_TAG_TBL A, FILE_TAG_HIMO_TBL B " &
+                                "where A.FILE_TAG_ID = B.TAG_ID And A.FILE_TAG_NAME like '%' " &
+                                "group by A.FILE_TAG_NAME " &
+                                "order by count(A.FILE_TAG_NAME) desc "
+
+
+        cmd.CommandText = sTagListQuery
+        'cmd.Parameters.Add(New OracleParameter("@TAG_VALUE", sTagName & "%"))
         reader = cmd.ExecuteReader()
 
         Return 0
@@ -748,7 +882,37 @@ Public Class OraAccess
 
     End Function
 
+    'ブックマークテーブルのレコード追加
+    Public Function insertBookMark(ByVal sTitle As String, ByVal sPath As String, ByVal iFileId As Integer, ByVal lFileSize As Long, ByVal iRank As Integer, ByRef imgPic As Image) As Integer
 
+        Dim sBookMarkQuery As String = Nothing
+        Dim sIdSeqQuery As String = Nothing
+
+        sIdSeqQuery = "SELECT BOOKMARK_TBL_SEQ.nextval AS ID FROM dual"
+        cmd.CommandText = sIdSeqQuery
+        iId = CInt(cmd.ExecuteScalar)
+
+        sBookMarkQuery = "INSERT INTO BOOKMARK_TBL VALUES (:BOOKMARK_ID,:TITLE,:PATH,:FILE_ID,:FILE_SIZE,:RANK,sysdate,:THUMBNAIL)"
+        cmd.CommandText = sBookMarkQuery
+        cmd.Parameters.Clear()
+        cmd.Parameters.Add(New OracleParameter("BOOKMARK_ID", iId))
+        cmd.Parameters.Add(New OracleParameter("TITLE", sTitle))
+        cmd.Parameters.Add(New OracleParameter("PATH", sPath))
+        cmd.Parameters.Add(New OracleParameter("FILE_ID", iFileId))
+        cmd.Parameters.Add(New OracleParameter("FILE_SIZE", lFileSize))
+        cmd.Parameters.Add(New OracleParameter("RANK", iRank))
+        Dim pBlob As OracleParameter =
+                cmd.Parameters.Add("THUMBNAIL", OracleDbType.Blob)
+        Dim imgconv As New ImageConverter()
+        Dim b As Byte() =
+            CType(imgconv.ConvertTo(imgPic, GetType(Byte())), Byte())
+        pBlob.Value = b
+
+        cmd.ExecuteNonQuery()
+
+        Return iId
+
+    End Function
 
 
 
@@ -816,6 +980,48 @@ Public Class OraAccess
 
     End Function
 
+    ''' <summary>
+    ''' ブックマークの更新
+    ''' </summary>
+    ''' <param name="iBMID"></param>
+    ''' <param name="iFileId"></param>
+    ''' <param name="stitle"></param>
+    ''' <param name="sPath"></param>
+    ''' <param name="iRank"></param>
+    ''' <param name="imgPic"></param>
+    ''' <returns></returns>
+    Public Function updateBookMark(ByVal iBMID As Integer, ByVal iFileId As Integer, ByVal stitle As String, ByVal sPath As String, ByVal iRank As Integer, ByRef imgPic As Image) As Integer
+
+        Dim sBookMarkUpdateQuery As String = Nothing
+
+        sBookMarkUpdateQuery = "update BOOKMARK_TBL set FILE_ID = :FILE_ID,TITLE = :TITLE ,PATH = :PATH, RANK=:RANK, THUMBNAIL = :THUMBNAIL where BOOKMARK_ID = :BOOKMARK_ID"
+        cmd.CommandText = sBookMarkUpdateQuery
+        cmd.Parameters.Clear()
+
+        iId = iFileId
+        cmd.Parameters.Add(New OracleParameter("FILE_ID", iFileId))
+        cmd.Parameters.Add(New OracleParameter("TITLE", stitle))
+        cmd.Parameters.Add(New OracleParameter("PATH", sPath))
+        cmd.Parameters.Add(New OracleParameter("RANK", iRank))
+        Dim pBlob As OracleParameter =
+        cmd.Parameters.Add("THUMBNAIL", OracleDbType.Blob)
+        Dim imgconv As New ImageConverter()
+        Dim b As Byte() =
+            CType(imgconv.ConvertTo(imgPic, GetType(Byte())), Byte())
+        pBlob.Value = b
+        cmd.Parameters.Add(New OracleParameter("BOOKMARK_ID", iBMID))
+
+        Console.WriteLine(sBookMarkUpdateQuery)
+        cmd.ExecuteNonQuery()
+
+        b = Nothing
+        imgconv = Nothing
+
+        Return 0
+
+    End Function
+
+
 
     '**************************************************************
     '********************** 　　　削除 　　　********************** 
@@ -842,7 +1048,6 @@ Public Class OraAccess
                 sFileTagHimoDelQuery = sFileTagHimoDelQuery & " and FOLDER_ID = :FOLDER_ID "
                 cmd.Parameters.Add(New OracleParameter("FOLDER_ID", iFileFolderId))
             Case 3
-            Case 2
                 sFileTagHimoDelQuery = sFileTagHimoDelQuery & " and BOOKMARK_ID = :BOOKMARK_ID "
                 cmd.Parameters.Add(New OracleParameter("BOOKMARK_ID", iFileFolderId))
 
@@ -900,6 +1105,22 @@ Public Class OraAccess
         Dim txn As OracleTransaction = cnn.BeginTransaction()
 
         sFolderQuery = "DELETE FROM FOLDER_TBL WHERE ID = " & iFolderId
+        cmd.CommandText = sFolderQuery
+        cmd.ExecuteNonQuery()
+        txn.Commit()
+        txn.Dispose()
+
+        Return 0
+    End Function
+
+    'ブックマークテーブルのレコード削除
+    'iBookMarkId　ブックマークID
+    Public Function deleteBookMark(ByVal iBookMarkId As Integer) As Integer
+
+
+        Dim txn As OracleTransaction = cnn.BeginTransaction()
+
+        sFolderQuery = "DELETE FROM BOOKMARK_TBL WHERE BOOKMARK_ID = " & iBookMarkId
         cmd.CommandText = sFolderQuery
         cmd.ExecuteNonQuery()
         txn.Commit()

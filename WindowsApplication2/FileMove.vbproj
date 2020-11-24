@@ -112,7 +112,10 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ApplicationEvents.vb" />
-    <Compile Include="FormUtil.vb" />
+    <Compile Include="Bean\BookMarkBean.vb" />
+    <Compile Include="Bean\FormBean.vb" />
+    <Compile Include="Bean\ImageListBean.vb" />
+    <Compile Include="View\FormView.vb" />
     <Compile Include="DBLogic.vb" />
     <Compile Include="FileMoveForm.vb">
       <SubType>Form</SubType>
@@ -140,8 +143,11 @@
     </Compile>
     <Compile Include="MyClipboardViewer.vb" />
     <Compile Include="OraAccess.vb" />
-    <Compile Include="Util.vb" />
-    <Compile Include="ZipOpen.vb" />
+    <Compile Include="Util\Util.vb" />
+    <Compile Include="Util\ZipOpen.vb" />
+    <Compile Include="View\BookMarkImateListView.vb" />
+    <Compile Include="View\FolderTreeView.vb" />
+    <Compile Include="View\ImageListView.vb" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="FileMoveForm.resx">
@@ -184,6 +190,7 @@
       <Install>true</Install>
     </BootstrapperPackage>
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.VisualBasic.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

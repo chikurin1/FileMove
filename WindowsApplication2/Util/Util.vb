@@ -152,10 +152,24 @@ Module Util
         Next cControl
     End Sub
 
-    Public Sub ChangeBookmark()
+    'ファイルの存在チェック
+    'true:あり
+    'false：なし
+    Public Function FileExistCheck(ByVal sFilePath As String) As Boolean
 
-    End Sub
+        'DBチェック
+        Dim clsOraAccess As New OraAccess
+        If clsOraAccess.queryFilePathCount(sFilePath) <> 0 Then
+            Return True
+        Else
+            'ディレクトリチェック
+            Dim bExper As Boolean
+            bExper = System.IO.File.Exists(sFilePath)
+            Return bExper
+        End If
 
+        Return False
 
+    End Function
 
 End Module

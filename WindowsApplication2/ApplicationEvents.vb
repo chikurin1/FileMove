@@ -14,7 +14,7 @@
             If e.CommandLine.Count > 0 Then
 
                 ' コマンドラインの第1引数を取得
-                FileMoveForm.sFilePath = e.CommandLine(0)
+                FileMoveForm.sCommandLine = e.CommandLine(0)
             End If
             FileMoveForm.Form1_Load("hoge", Nothing)
         End Sub

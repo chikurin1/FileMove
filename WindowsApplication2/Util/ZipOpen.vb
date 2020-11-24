@@ -1,7 +1,7 @@
 ﻿Public Class ZipOpen
 
     Private sFilePath As String
-    Private listTag As New ArrayList
+    Private listTag As New List(Of String)
     Private sFileName As String
     Private sFileMei As String
     Private imgThumbs As Image
@@ -35,7 +35,7 @@
     End Property
 
 
-    Public ReadOnly Property Tag() As ArrayList
+    Public ReadOnly Property Tag() As List(Of String)
         Get
             Return listTag
         End Get

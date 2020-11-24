@@ -37,6 +37,7 @@ Public Class OraAccess
         sDropListQuery = "select FLAG_01,KOBETU_01 from SYSTEM_KANRI_MST " &
                         "where KANRI_CODE='SE' AND KANRI_PG = 'FILE_CATEGORY' order by KANRI_KBN"
 
+        Console.WriteLine(sDropListQuery)
         cmd.CommandText = sDropListQuery
 
         reader = cmd.ExecuteReader()
@@ -60,6 +61,7 @@ Public Class OraAccess
         "where FILE_TAG_NAME =:FILE_TAG_NAME and CATEGORY = :CATEGORY and rownum = 1 " &
         "order by FILE_TAG_ID "
 
+        Console.WriteLine(sFileTagSelectSql)
         cmd.CommandText = sFileTagSelectSql
         cmd.Parameters.Clear()
         cmd.Parameters.Add(New OracleParameter("FILE_TAG_NAME", sData))
@@ -108,6 +110,7 @@ Public Class OraAccess
         End Select
 
 
+        Console.WriteLine(sFileTagHimoSelectSql)
         cmd.CommandText = sFileTagHimoSelectSql
 
         If (Integer.TryParse(cmd.ExecuteScalar(), iFileTagHimoId)) Then
@@ -132,6 +135,7 @@ Public Class OraAccess
         sFileTagHimoSelectSql = "select count(HIMO_ID) from FILE_TAG_HIMO_TBL " &
                                 "where TAG_ID =:TAG_ID "
 
+        Console.WriteLine(sFileTagHimoSelectSql)
         cmd.CommandText = sFileTagHimoSelectSql
         cmd.Parameters.Clear()
         cmd.Parameters.Add(New OracleParameter("TAG_ID", iFileTagId))
@@ -169,6 +173,7 @@ Public Class OraAccess
                 cmd.Parameters.Add(New OracleParameter("BOOKMARK_ID", iFileFolderId))
         End Select
 
+        Console.WriteLine(syFileTagQuery)
         cmd.CommandText = syFileTagQuery
         cmd.Parameters.Add(New OracleParameter("FILE_KBN", iFile_Kbn))
         reader = cmd.ExecuteReader()
@@ -204,6 +209,7 @@ Public Class OraAccess
                 cmd.Parameters.Add(New OracleParameter("BOOKMARK_ID", iFileFolderId))
         End Select
 
+        Console.WriteLine(syFileTagQuery)
         cmd.CommandText = syFileTagQuery
         cmd.Parameters.Add(New OracleParameter("FILE_KBN", iFile_Kbn))
         reader = cmd.ExecuteReader()
@@ -232,6 +238,7 @@ Public Class OraAccess
             cmd.Parameters.Add(New OracleParameter("FOLDER_NAME", sCondition & "%"))
         End If
 
+        Console.WriteLine(sGenreQuery)
         cmd.CommandText = sGenreQuery
 
         reader = cmd.ExecuteReader()
@@ -257,6 +264,7 @@ Public Class OraAccess
             cmd.Parameters.Add(New OracleParameter("FOLDER_NAME", sCondition & "%"))
         End If
 
+        Console.WriteLine(sFolderQuery)
         cmd.CommandText = sFolderQuery
 
         reader = cmd.ExecuteReader()
@@ -283,6 +291,7 @@ Public Class OraAccess
             cmd.Parameters.Add(New OracleParameter("FOLDER_NAME", sCondition))
         End If
 
+        'Console.WriteLine(sSubFolderQuery)
         cmd.CommandText = sSubFolderQuery
 
         reader = cmd.ExecuteReader()
@@ -309,6 +318,7 @@ Public Class OraAccess
             "WHERE C.GENRE_ID = D.ID AND B.PARENT_FOLDER_ID = C.ID AND A.FOLDER_ID = B.ID AND " &
             "A.FOLDER_ID = " & iCondition & " ORDER BY TITLE "
 
+        Console.WriteLine(sFileListQuery)
         cmd.CommandText = sFileListQuery
 
         reader = cmd.ExecuteReader()
@@ -406,7 +416,6 @@ Public Class OraAccess
         Dim sFileListQuery As String = Nothing
         Dim sTagCondition As String = Nothing
         Dim sZokuCondition As String = Nothing
-
 
         'タグSQL作成
         If (sTagName <> "") Then
@@ -668,6 +677,8 @@ Public Class OraAccess
         Else
             sFolderPathQuery = "SELECT PATH || '\' AS A FROM GENRE_TBL WHERE ID = " & iFolderId
         End If
+
+        Console.WriteLine(sFolderPathQuery)
         cmd.CommandText = sFolderPathQuery
 
         Return cmd.ExecuteScalar()
@@ -691,6 +702,8 @@ Public Class OraAccess
 
         cmd.Parameters.Clear()
         cmd.Parameters.Add(New OracleParameter("TAG_NAME", sTagName))
+
+        Console.WriteLine(sDefaultCategoryQuery)
         cmd.CommandText = sDefaultCategoryQuery
 
         Return cmd.ExecuteScalar()
@@ -712,6 +725,7 @@ Public Class OraAccess
                                 "order by COUNT(A.FILE_TAG_NAME) desc) " &
                                 "where rownum <= :COUNT"
 
+        Console.WriteLine(sZokuseiQuery)
         cmd.CommandText = sZokuseiQuery
         cmd.Parameters.Clear()
         cmd.Parameters.Add(New OracleParameter("COUNT", iCount))
@@ -737,6 +751,7 @@ Public Class OraAccess
                                 "order by count(A.FILE_TAG_NAME) desc "
 
 
+        Console.WriteLine(sTagListQuery)
         cmd.CommandText = sTagListQuery
         'cmd.Parameters.Add(New OracleParameter("@TAG_VALUE", sTagName & "%"))
         reader = cmd.ExecuteReader()
@@ -746,7 +761,75 @@ Public Class OraAccess
     End Function
 
 
+    'パスからファイル件数を取得
+    'sPath　パス
+    '条件に一致するファイルの件数を返却
+    Public Function queryFilePathCount(ByVal sPath As String) As Integer
 
+        Dim sFilePathQuery As String = Nothing
+
+        sFilePathQuery = "select max(EXP) from ( " &
+                            "SELECT count(A.ID) as EXP " &
+                            "FROM FILE_TBL A ,FOLDER_TBL B ,GENRE_TBL C " &
+                            "WHERE B.GENRE_ID = C.ID And A.FOLDER_ID = B.ID And " &
+                            "C.PATH || '\' || B.PATH || '\' || A.PATH  = :FILEPATH " &
+                        "UNION ALL " &
+                        "SELECT count(A.ID) as EXP " &
+                            "FROM FILE_TBL A ,FOLDER_TBL B ,FOLDER_TBL C ,GENRE_TBL D " &
+                            "WHERE C.GENRE_ID = D.ID AND B.PARENT_FOLDER_ID = C.ID AND A.FOLDER_ID = B.ID AND " &
+                             "D.PATH || '\' || C.PATH || '\' || B.PATH || '\' || A.PATH = :FILEPATH )"
+
+        Console.WriteLine(sFilePathQuery)
+
+        cmd.CommandText = sFilePathQuery
+        cmd.Parameters.Clear()
+        cmd.Parameters.Add(New OracleParameter("FILEPATH", sPath))
+        Return cmd.ExecuteScalar()
+
+    End Function
+
+    'パスからブックマーク件数を取得
+    'sPath　パス
+    '条件に一致するファイルの件数を返却
+    Public Function querBookMarkPathCount(ByVal sPath As String) As Integer
+
+        Dim sFilePathQuery As String = Nothing
+
+        sFilePathQuery = "select max(EXP) from ( " &
+                            "SELECT count(D.BOOKMARK_ID) as EXP " &
+                            "FROM FILE_TBL A ,FOLDER_TBL B ,GENRE_TBL C ,BOOKMARK_TBL D " &
+                            "WHERE B.GENRE_ID = C.ID And A.FOLDER_ID = B.ID And D.FILE_ID = A.ID and " &
+                            "C.PATH || '\' || B.PATH || '\' || A.PATH  || '\' || D.PATH = :FILEPATH " &
+                        "UNION ALL " &
+                        "SELECT count(E.BOOKMARK_ID) as EXP " &
+                            "FROM FILE_TBL A ,FOLDER_TBL B ,FOLDER_TBL C ,GENRE_TBL D ,BOOKMARK_TBL E " &
+                            "WHERE C.GENRE_ID = D.ID AND B.PARENT_FOLDER_ID = C.ID AND A.FOLDER_ID = B.ID AND E.FILE_ID = A.ID AND " &
+                             "D.PATH || '\' || C.PATH || '\' || B.PATH || '\' || A.PATH || '\' || E.PATH = :FILEPATH )"
+
+        Console.WriteLine(sFilePathQuery)
+
+        cmd.CommandText = sFilePathQuery
+        cmd.Parameters.Clear()
+        cmd.Parameters.Add(New OracleParameter("FILEPATH", sPath))
+        Return cmd.ExecuteScalar()
+
+    End Function
+
+    'ジャンルテーブルの最大値を取得
+    '引数：なし
+    '戻り値：ジャンルIDの最大値
+    Public Function queryGenreMaxId() As Integer
+
+        Dim sMaxGenreQuery As String = Nothing
+
+        sMaxGenreQuery = "select max(id) from genre_tbl"
+
+        Console.WriteLine(sMaxGenreQuery)
+
+        cmd.CommandText = sMaxGenreQuery
+        Return cmd.ExecuteScalar()
+
+    End Function
 
 
     '**************************************************************
@@ -764,6 +847,8 @@ Public Class OraAccess
         sFileTagQuery = "insert into FILE_TAG_TBL values (FILE_TAG_TBL_SEQ.NEXTVAL,:FILE_TAG_NAME,:CATEGORY,'')"
 
         cmd.Parameters.Clear()
+
+        Console.WriteLine(sFileTagQuery)
         cmd.CommandText = sFileTagQuery
         cmd.Parameters.Add(New OracleParameter(":FILE_TAG_NAME", sData))
         cmd.Parameters.Add(New OracleParameter(":CATEGORY", iCategory))
@@ -782,6 +867,8 @@ Public Class OraAccess
         Dim sFileTagHimoQuery As String = Nothing
 
         sFileTagHimoQuery = "insert into file_tag_himo_tbl values (file_tag_himo_tbl_seq.nextval,:FILE_TAG_ID,:FILE_ID,:FOLDER_ID,:BOOKMARK_ID,:FILE_KBN,'')"
+
+        Console.WriteLine(sFileTagHimoQuery)
         cmd.CommandText = sFileTagHimoQuery
         cmd.Parameters.Clear()
         cmd.Parameters.Add(New OracleParameter(":FILE_TAG_ID", iFileTagId))
@@ -822,6 +909,8 @@ Public Class OraAccess
 
         If (iParentFolderId > 10) Then
             Dim sFoldergQuery As String = "INSERT INTO folder_tbl VALUES (:ID,:FOLDER_NAME,:PATH,:GENRE_ID,:PARENT_FOLDER)"
+
+            Console.WriteLine(sFoldergQuery)
             cmd.CommandText = sFoldergQuery
             cmd.Parameters.Clear()
             cmd.Parameters.Add(New OracleParameter("ID", iFolderId))
@@ -833,6 +922,8 @@ Public Class OraAccess
         Else
 
             Dim sFoldergQuery As String = "INSERT INTO folder_tbl VALUES (:ID,:FOLDER_NAME,:PATH,:GENRE_ID,:PARENT_FOLDER)"
+
+            Console.WriteLine(sFoldergQuery)
             cmd.CommandText = sFoldergQuery
             cmd.Parameters.Clear()
             cmd.Parameters.Add(New OracleParameter("ID", iFolderId))
@@ -857,10 +948,13 @@ Public Class OraAccess
         Dim sIdSeqQuery As String = Nothing
 
         sIdSeqQuery = "SELECT FILE_TBL_SEQ.nextval AS ID FROM dual"
+        Console.WriteLine(sIdSeqQuery)
         cmd.CommandText = sIdSeqQuery
         iId = CInt(cmd.ExecuteScalar)
 
         sFileQuery = "INSERT INTO file_tbl VALUES (:FILEID,:TITLE,:PATH,:FOLDER_ID,:FILE_SIZE,:RANK,sysdate,:THUMBNAIL)"
+
+        Console.WriteLine(sFileQuery)
         cmd.CommandText = sFileQuery
         cmd.Parameters.Clear()
         cmd.Parameters.Add(New OracleParameter("FILEID", iId))
@@ -889,10 +983,13 @@ Public Class OraAccess
         Dim sIdSeqQuery As String = Nothing
 
         sIdSeqQuery = "SELECT BOOKMARK_TBL_SEQ.nextval AS ID FROM dual"
+        Console.WriteLine(sIdSeqQuery)
         cmd.CommandText = sIdSeqQuery
         iId = CInt(cmd.ExecuteScalar)
 
         sBookMarkQuery = "INSERT INTO BOOKMARK_TBL VALUES (:BOOKMARK_ID,:TITLE,:PATH,:FILE_ID,:FILE_SIZE,:RANK,sysdate,:THUMBNAIL)"
+
+        Console.WriteLine(sBookMarkQuery)
         cmd.CommandText = sBookMarkQuery
         cmd.Parameters.Clear()
         cmd.Parameters.Add(New OracleParameter("BOOKMARK_ID", iId))
@@ -928,6 +1025,8 @@ Public Class OraAccess
         Dim sFileQuery As String = Nothing
 
         sFileQuery = "UPDATE file_tbl SET thumbnail = :THUMBNAIL where id = :FILEID"
+
+        Console.WriteLine(sFileQuery)
         cmd.CommandText = sFileQuery
         cmd.Parameters.Clear()
 
@@ -956,6 +1055,8 @@ Public Class OraAccess
         Dim sFileQuery As String = Nothing
 
         sFileQuery = "UPDATE file_tbl SET folder_id = :FOLDER_ID,title = :TITLE,path = :PATH,rank=:RANK,thumbnail = :THUMBNAIL where id = :FILEID"
+
+        Console.WriteLine(sFileQuery)
         cmd.CommandText = sFileQuery
         cmd.Parameters.Clear()
 
@@ -995,6 +1096,8 @@ Public Class OraAccess
         Dim sBookMarkUpdateQuery As String = Nothing
 
         sBookMarkUpdateQuery = "update BOOKMARK_TBL set FILE_ID = :FILE_ID,TITLE = :TITLE ,PATH = :PATH, RANK=:RANK, THUMBNAIL = :THUMBNAIL where BOOKMARK_ID = :BOOKMARK_ID"
+
+        Console.WriteLine(sBookMarkUpdateQuery)
         cmd.CommandText = sBookMarkUpdateQuery
         cmd.Parameters.Clear()
 
@@ -1011,7 +1114,6 @@ Public Class OraAccess
         pBlob.Value = b
         cmd.Parameters.Add(New OracleParameter("BOOKMARK_ID", iBMID))
 
-        Console.WriteLine(sBookMarkUpdateQuery)
         cmd.ExecuteNonQuery()
 
         b = Nothing
@@ -1053,6 +1155,7 @@ Public Class OraAccess
 
         End Select
 
+        Console.WriteLine(sFileTagHimoDelQuery)
         cmd.CommandText = sFileTagHimoDelQuery
         cmd.ExecuteNonQuery()
 
@@ -1069,6 +1172,8 @@ Public Class OraAccess
 
 
         cmd.Parameters.Clear()
+
+        Console.WriteLine(sFileTagDelQuery)
         cmd.CommandText = sFileTagDelQuery
         cmd.Parameters.Add(New OracleParameter("TAG_ID", iFileTagId))
         cmd.ExecuteNonQuery()
@@ -1088,6 +1193,8 @@ Public Class OraAccess
 
         cmd.Parameters.Clear()
         cmd.Parameters.Add(New OracleParameter("FILEID", iFileId))
+
+        Console.WriteLine(sFileQuery)
         cmd.CommandText = sFileQuery
         cmd.ExecuteNonQuery()
 
@@ -1105,6 +1212,8 @@ Public Class OraAccess
         Dim txn As OracleTransaction = cnn.BeginTransaction()
 
         sFolderQuery = "DELETE FROM FOLDER_TBL WHERE ID = " & iFolderId
+
+        Console.WriteLine(sFolderQuery)
         cmd.CommandText = sFolderQuery
         cmd.ExecuteNonQuery()
         txn.Commit()
@@ -1121,6 +1230,8 @@ Public Class OraAccess
         Dim txn As OracleTransaction = cnn.BeginTransaction()
 
         sFolderQuery = "DELETE FROM BOOKMARK_TBL WHERE BOOKMARK_ID = " & iBookMarkId
+
+        Console.WriteLine(sFolderQuery)
         cmd.CommandText = sFolderQuery
         cmd.ExecuteNonQuery()
         txn.Commit()

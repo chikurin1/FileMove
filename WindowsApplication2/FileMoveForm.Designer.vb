@@ -78,22 +78,24 @@ Partial Class FileMoveForm
         Me.picRank4 = New System.Windows.Forms.PictureBox()
         Me.picRank5 = New System.Windows.Forms.PictureBox()
         Me.picRank0 = New System.Windows.Forms.PictureBox()
-        Me.TableLayoutPanel1 = New System.Windows.Forms.TableLayoutPanel()
-        Me.TabControl1 = New System.Windows.Forms.TabControl()
-        Me.TabPage1 = New System.Windows.Forms.TabPage()
-        Me.treeDir = New System.Windows.Forms.TreeView()
-        Me.TabPage2 = New System.Windows.Forms.TabPage()
-        Me.lstThumbs = New System.Windows.Forms.ListView()
-        Me.TabPage3 = New System.Windows.Forms.TabPage()
-        Me.WebBrowser1 = New System.Windows.Forms.WebBrowser()
-        Me.TabPage4 = New System.Windows.Forms.TabPage()
-        Me.PictureBox1 = New System.Windows.Forms.PictureBox()
-        Me.ListBox1 = New System.Windows.Forms.ListBox()
         Me.lstBookMark = New System.Windows.Forms.ListView()
+        Me.TabControl1 = New System.Windows.Forms.TabControl()
+        Me.tabTree = New System.Windows.Forms.TabPage()
+        Me.treeDir = New System.Windows.Forms.TreeView()
+        Me.tabImageList = New System.Windows.Forms.TabPage()
+        Me.lstThumbs = New System.Windows.Forms.ListView()
+        Me.tabGoogle = New System.Windows.Forms.TabPage()
+        Me.WebBrowser1 = New System.Windows.Forms.WebBrowser()
         Me.ilstBMThumbs = New System.Windows.Forms.ImageList(Me.components)
         Me.btnBookMarkAdd = New System.Windows.Forms.Button()
         Me.btnBookMarkDel = New System.Windows.Forms.Button()
         Me.btnBookMarkUpdate = New System.Windows.Forms.Button()
+        Me.TableLayoutPanel1 = New System.Windows.Forms.TableLayoutPanel()
+        Me.chkZoku11 = New System.Windows.Forms.CheckBox()
+        Me.chkZoku12 = New System.Windows.Forms.CheckBox()
+        Me.chkZoku13 = New System.Windows.Forms.CheckBox()
+        Me.chkZoku14 = New System.Windows.Forms.CheckBox()
+        Me.chkZoku15 = New System.Windows.Forms.CheckBox()
         CType(Me.picThumbs, System.ComponentModel.ISupportInitialize).BeginInit()
         CType(Me.picRank1, System.ComponentModel.ISupportInitialize).BeginInit()
         CType(Me.picRank2, System.ComponentModel.ISupportInitialize).BeginInit()
@@ -101,13 +103,11 @@ Partial Class FileMoveForm
         CType(Me.picRank4, System.ComponentModel.ISupportInitialize).BeginInit()
         CType(Me.picRank5, System.ComponentModel.ISupportInitialize).BeginInit()
         CType(Me.picRank0, System.ComponentModel.ISupportInitialize).BeginInit()
-        Me.TableLayoutPanel1.SuspendLayout()
         Me.TabControl1.SuspendLayout()
-        Me.TabPage1.SuspendLayout()
-        Me.TabPage2.SuspendLayout()
-        Me.TabPage3.SuspendLayout()
-        Me.TabPage4.SuspendLayout()
-        CType(Me.PictureBox1, System.ComponentModel.ISupportInitialize).BeginInit()
+        Me.tabTree.SuspendLayout()
+        Me.tabImageList.SuspendLayout()
+        Me.tabGoogle.SuspendLayout()
+        Me.TableLayoutPanel1.SuspendLayout()
         Me.SuspendLayout()
         '
         'ilstThumbs
@@ -623,45 +623,40 @@ Partial Class FileMoveForm
         Me.picRank0.TabIndex = 53
         Me.picRank0.TabStop = False
         '
-        'TableLayoutPanel1
+        'lstBookMark
         '
-        Me.TableLayoutPanel1.ColumnCount = 1
-        Me.TableLayoutPanel1.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100.0!))
-        Me.TableLayoutPanel1.Controls.Add(Me.TabControl1, 0, 1)
-        Me.TableLayoutPanel1.Controls.Add(Me.lstBookMark, 0, 0)
-        Me.TableLayoutPanel1.Location = New System.Drawing.Point(3, 250)
-        Me.TableLayoutPanel1.Name = "TableLayoutPanel1"
-        Me.TableLayoutPanel1.RowCount = 2
-        Me.TableLayoutPanel1.RowStyles.Add(New System.Windows.Forms.RowStyle())
-        Me.TableLayoutPanel1.RowStyles.Add(New System.Windows.Forms.RowStyle())
-        Me.TableLayoutPanel1.Size = New System.Drawing.Size(986, 459)
-        Me.TableLayoutPanel1.TabIndex = 55
+        Me.lstBookMark.Dock = System.Windows.Forms.DockStyle.Fill
+        Me.lstBookMark.HideSelection = False
+        Me.lstBookMark.Location = New System.Drawing.Point(3, 329)
+        Me.lstBookMark.Name = "lstBookMark"
+        Me.lstBookMark.Size = New System.Drawing.Size(999, 126)
+        Me.lstBookMark.TabIndex = 0
+        Me.lstBookMark.UseCompatibleStateImageBehavior = False
         '
         'TabControl1
         '
         Me.TabControl1.Anchor = CType((((System.Windows.Forms.AnchorStyles.Top Or System.Windows.Forms.AnchorStyles.Bottom) _
             Or System.Windows.Forms.AnchorStyles.Left) _
             Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
-        Me.TabControl1.Controls.Add(Me.TabPage1)
-        Me.TabControl1.Controls.Add(Me.TabPage2)
-        Me.TabControl1.Controls.Add(Me.TabPage3)
-        Me.TabControl1.Controls.Add(Me.TabPage4)
-        Me.TabControl1.Location = New System.Drawing.Point(3, 131)
+        Me.TabControl1.Controls.Add(Me.tabTree)
+        Me.TabControl1.Controls.Add(Me.tabImageList)
+        Me.TabControl1.Controls.Add(Me.tabGoogle)
+        Me.TabControl1.Location = New System.Drawing.Point(3, 3)
         Me.TabControl1.Name = "TabControl1"
         Me.TabControl1.SelectedIndex = 0
-        Me.TabControl1.Size = New System.Drawing.Size(980, 326)
+        Me.TabControl1.Size = New System.Drawing.Size(999, 320)
         Me.TabControl1.TabIndex = 0
         '
-        'TabPage1
+        'tabTree
         '
-        Me.TabPage1.Controls.Add(Me.treeDir)
-        Me.TabPage1.Location = New System.Drawing.Point(4, 22)
-        Me.TabPage1.Name = "TabPage1"
-        Me.TabPage1.Padding = New System.Windows.Forms.Padding(3)
-        Me.TabPage1.Size = New System.Drawing.Size(972, 300)
-        Me.TabPage1.TabIndex = 0
-        Me.TabPage1.Text = "TabPage1"
-        Me.TabPage1.UseVisualStyleBackColor = True
+        Me.tabTree.Controls.Add(Me.treeDir)
+        Me.tabTree.Location = New System.Drawing.Point(4, 22)
+        Me.tabTree.Name = "tabTree"
+        Me.tabTree.Padding = New System.Windows.Forms.Padding(3)
+        Me.tabTree.Size = New System.Drawing.Size(991, 294)
+        Me.tabTree.TabIndex = 0
+        Me.tabTree.Text = "フォルダ"
+        Me.tabTree.UseVisualStyleBackColor = True
         '
         'treeDir
         '
@@ -670,19 +665,19 @@ Partial Class FileMoveForm
         Me.treeDir.ForeColor = System.Drawing.SystemColors.WindowText
         Me.treeDir.Location = New System.Drawing.Point(3, 3)
         Me.treeDir.Name = "treeDir"
-        Me.treeDir.Size = New System.Drawing.Size(966, 294)
+        Me.treeDir.Size = New System.Drawing.Size(985, 288)
         Me.treeDir.TabIndex = 16
         '
-        'TabPage2
+        'tabImageList
         '
-        Me.TabPage2.Controls.Add(Me.lstThumbs)
-        Me.TabPage2.Location = New System.Drawing.Point(4, 22)
-        Me.TabPage2.Name = "TabPage2"
-        Me.TabPage2.Padding = New System.Windows.Forms.Padding(3)
-        Me.TabPage2.Size = New System.Drawing.Size(972, 300)
-        Me.TabPage2.TabIndex = 1
-        Me.TabPage2.Text = "TabPage2"
-        Me.TabPage2.UseVisualStyleBackColor = True
+        Me.tabImageList.Controls.Add(Me.lstThumbs)
+        Me.tabImageList.Location = New System.Drawing.Point(4, 22)
+        Me.tabImageList.Name = "tabImageList"
+        Me.tabImageList.Padding = New System.Windows.Forms.Padding(3)
+        Me.tabImageList.Size = New System.Drawing.Size(991, 294)
+        Me.tabImageList.TabIndex = 1
+        Me.tabImageList.Text = "検索結果"
+        Me.tabImageList.UseVisualStyleBackColor = True
         '
         'lstThumbs
         '
@@ -693,20 +688,20 @@ Partial Class FileMoveForm
         Me.lstThumbs.Location = New System.Drawing.Point(3, 3)
         Me.lstThumbs.Name = "lstThumbs"
         Me.lstThumbs.ShowItemToolTips = True
-        Me.lstThumbs.Size = New System.Drawing.Size(966, 294)
+        Me.lstThumbs.Size = New System.Drawing.Size(985, 288)
         Me.lstThumbs.SmallImageList = Me.ilstThumbs
         Me.lstThumbs.TabIndex = 28
         Me.lstThumbs.UseCompatibleStateImageBehavior = False
         '
-        'TabPage3
+        'tabGoogle
         '
-        Me.TabPage3.Controls.Add(Me.WebBrowser1)
-        Me.TabPage3.Location = New System.Drawing.Point(4, 22)
-        Me.TabPage3.Name = "TabPage3"
-        Me.TabPage3.Size = New System.Drawing.Size(972, 300)
-        Me.TabPage3.TabIndex = 2
-        Me.TabPage3.Text = "TabPage3"
-        Me.TabPage3.UseVisualStyleBackColor = True
+        Me.tabGoogle.Controls.Add(Me.WebBrowser1)
+        Me.tabGoogle.Location = New System.Drawing.Point(4, 22)
+        Me.tabGoogle.Name = "tabGoogle"
+        Me.tabGoogle.Size = New System.Drawing.Size(991, 294)
+        Me.tabGoogle.TabIndex = 2
+        Me.tabGoogle.Text = "google"
+        Me.tabGoogle.UseVisualStyleBackColor = True
         '
         'WebBrowser1
         '
@@ -714,48 +709,9 @@ Partial Class FileMoveForm
         Me.WebBrowser1.Location = New System.Drawing.Point(0, 0)
         Me.WebBrowser1.MinimumSize = New System.Drawing.Size(20, 20)
         Me.WebBrowser1.Name = "WebBrowser1"
-        Me.WebBrowser1.Size = New System.Drawing.Size(972, 300)
+        Me.WebBrowser1.Size = New System.Drawing.Size(991, 294)
         Me.WebBrowser1.TabIndex = 0
         Me.WebBrowser1.Url = New System.Uri("about:blank", System.UriKind.Absolute)
-        '
-        'TabPage4
-        '
-        Me.TabPage4.Controls.Add(Me.PictureBox1)
-        Me.TabPage4.Controls.Add(Me.ListBox1)
-        Me.TabPage4.Location = New System.Drawing.Point(4, 22)
-        Me.TabPage4.Name = "TabPage4"
-        Me.TabPage4.Padding = New System.Windows.Forms.Padding(3)
-        Me.TabPage4.Size = New System.Drawing.Size(972, 300)
-        Me.TabPage4.TabIndex = 3
-        Me.TabPage4.Text = "TabPage4"
-        Me.TabPage4.UseVisualStyleBackColor = True
-        '
-        'PictureBox1
-        '
-        Me.PictureBox1.Location = New System.Drawing.Point(385, 345)
-        Me.PictureBox1.Name = "PictureBox1"
-        Me.PictureBox1.Size = New System.Drawing.Size(100, 50)
-        Me.PictureBox1.TabIndex = 1
-        Me.PictureBox1.TabStop = False
-        '
-        'ListBox1
-        '
-        Me.ListBox1.AllowDrop = True
-        Me.ListBox1.FormattingEnabled = True
-        Me.ListBox1.ItemHeight = 12
-        Me.ListBox1.Location = New System.Drawing.Point(320, 146)
-        Me.ListBox1.Name = "ListBox1"
-        Me.ListBox1.Size = New System.Drawing.Size(281, 112)
-        Me.ListBox1.TabIndex = 0
-        '
-        'lstBookMark
-        '
-        Me.lstBookMark.HideSelection = False
-        Me.lstBookMark.Location = New System.Drawing.Point(3, 3)
-        Me.lstBookMark.Name = "lstBookMark"
-        Me.lstBookMark.Size = New System.Drawing.Size(976, 122)
-        Me.lstBookMark.TabIndex = 0
-        Me.lstBookMark.UseCompatibleStateImageBehavior = False
         '
         'ilstBMThumbs
         '
@@ -796,11 +752,85 @@ Partial Class FileMoveForm
         Me.btnBookMarkUpdate.UseVisualStyleBackColor = True
         Me.btnBookMarkUpdate.Visible = False
         '
+        'TableLayoutPanel1
+        '
+        Me.TableLayoutPanel1.Anchor = CType((((System.Windows.Forms.AnchorStyles.Top Or System.Windows.Forms.AnchorStyles.Bottom) _
+            Or System.Windows.Forms.AnchorStyles.Left) _
+            Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
+        Me.TableLayoutPanel1.ColumnCount = 1
+        Me.TableLayoutPanel1.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 50.0!))
+        Me.TableLayoutPanel1.Controls.Add(Me.lstBookMark, 0, 1)
+        Me.TableLayoutPanel1.Controls.Add(Me.TabControl1, 0, 0)
+        Me.TableLayoutPanel1.Location = New System.Drawing.Point(0, 262)
+        Me.TableLayoutPanel1.Margin = New System.Windows.Forms.Padding(0)
+        Me.TableLayoutPanel1.Name = "TableLayoutPanel1"
+        Me.TableLayoutPanel1.RowCount = 2
+        Me.TableLayoutPanel1.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 71.39738!))
+        Me.TableLayoutPanel1.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 28.60262!))
+        Me.TableLayoutPanel1.Size = New System.Drawing.Size(1005, 458)
+        Me.TableLayoutPanel1.TabIndex = 59
+        '
+        'chkZoku11
+        '
+        Me.chkZoku11.AutoSize = True
+        Me.chkZoku11.Location = New System.Drawing.Point(100, 113)
+        Me.chkZoku11.Name = "chkZoku11"
+        Me.chkZoku11.Size = New System.Drawing.Size(88, 16)
+        Me.chkZoku11.TabIndex = 60
+        Me.chkZoku11.Text = "CheckBox11"
+        Me.chkZoku11.UseVisualStyleBackColor = True
+        '
+        'chkZoku12
+        '
+        Me.chkZoku12.AutoSize = True
+        Me.chkZoku12.Location = New System.Drawing.Point(188, 113)
+        Me.chkZoku12.Name = "chkZoku12"
+        Me.chkZoku12.Size = New System.Drawing.Size(88, 16)
+        Me.chkZoku12.TabIndex = 61
+        Me.chkZoku12.Text = "CheckBox12"
+        Me.chkZoku12.UseVisualStyleBackColor = True
+        '
+        'chkZoku13
+        '
+        Me.chkZoku13.AutoSize = True
+        Me.chkZoku13.Location = New System.Drawing.Point(276, 113)
+        Me.chkZoku13.Name = "chkZoku13"
+        Me.chkZoku13.Size = New System.Drawing.Size(88, 16)
+        Me.chkZoku13.TabIndex = 62
+        Me.chkZoku13.Text = "CheckBox13"
+        Me.chkZoku13.UseVisualStyleBackColor = True
+        '
+        'chkZoku14
+        '
+        Me.chkZoku14.AutoSize = True
+        Me.chkZoku14.Location = New System.Drawing.Point(364, 113)
+        Me.chkZoku14.Name = "chkZoku14"
+        Me.chkZoku14.Size = New System.Drawing.Size(88, 16)
+        Me.chkZoku14.TabIndex = 63
+        Me.chkZoku14.Text = "CheckBox14"
+        Me.chkZoku14.UseVisualStyleBackColor = True
+        '
+        'chkZoku15
+        '
+        Me.chkZoku15.AutoSize = True
+        Me.chkZoku15.Location = New System.Drawing.Point(447, 113)
+        Me.chkZoku15.Name = "chkZoku15"
+        Me.chkZoku15.Size = New System.Drawing.Size(88, 16)
+        Me.chkZoku15.TabIndex = 64
+        Me.chkZoku15.Text = "CheckBox15"
+        Me.chkZoku15.UseVisualStyleBackColor = True
+        '
         'FileMoveForm
         '
         Me.AutoScaleDimensions = New System.Drawing.SizeF(6.0!, 12.0!)
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
         Me.ClientSize = New System.Drawing.Size(1006, 721)
+        Me.Controls.Add(Me.chkZoku15)
+        Me.Controls.Add(Me.chkZoku14)
+        Me.Controls.Add(Me.chkZoku13)
+        Me.Controls.Add(Me.chkZoku12)
+        Me.Controls.Add(Me.chkZoku11)
+        Me.Controls.Add(Me.TableLayoutPanel1)
         Me.Controls.Add(Me.btnBookMarkUpdate)
         Me.Controls.Add(Me.btnBookMarkDel)
         Me.Controls.Add(Me.btnBookMarkAdd)
@@ -856,7 +886,6 @@ Partial Class FileMoveForm
         Me.Controls.Add(Me.lblFilePath)
         Me.Controls.Add(Me.txtFileName)
         Me.Controls.Add(Me.picThumbs)
-        Me.Controls.Add(Me.TableLayoutPanel1)
         Me.Name = "FileMoveForm"
         Me.Text = "Form1"
         CType(Me.picThumbs, System.ComponentModel.ISupportInitialize).EndInit()
@@ -866,13 +895,11 @@ Partial Class FileMoveForm
         CType(Me.picRank4, System.ComponentModel.ISupportInitialize).EndInit()
         CType(Me.picRank5, System.ComponentModel.ISupportInitialize).EndInit()
         CType(Me.picRank0, System.ComponentModel.ISupportInitialize).EndInit()
-        Me.TableLayoutPanel1.ResumeLayout(False)
         Me.TabControl1.ResumeLayout(False)
-        Me.TabPage1.ResumeLayout(False)
-        Me.TabPage2.ResumeLayout(False)
-        Me.TabPage3.ResumeLayout(False)
-        Me.TabPage4.ResumeLayout(False)
-        CType(Me.PictureBox1, System.ComponentModel.ISupportInitialize).EndInit()
+        Me.tabTree.ResumeLayout(False)
+        Me.tabImageList.ResumeLayout(False)
+        Me.tabGoogle.ResumeLayout(False)
+        Me.TableLayoutPanel1.ResumeLayout(False)
         Me.ResumeLayout(False)
         Me.PerformLayout()
 
@@ -931,20 +958,22 @@ Partial Class FileMoveForm
     Friend WithEvents picRank4 As PictureBox
     Friend WithEvents picRank5 As PictureBox
     Friend WithEvents picRank0 As PictureBox
-    Friend WithEvents TableLayoutPanel1 As TableLayoutPanel
     Friend WithEvents lstBookMark As ListView
     Friend WithEvents TabControl1 As TabControl
-    Friend WithEvents TabPage1 As TabPage
+    Friend WithEvents tabTree As TabPage
     Friend WithEvents treeDir As TreeView
-    Friend WithEvents TabPage3 As TabPage
+    Friend WithEvents tabGoogle As TabPage
     Friend WithEvents WebBrowser1 As WebBrowser
-    Friend WithEvents TabPage4 As TabPage
-    Friend WithEvents PictureBox1 As PictureBox
-    Friend WithEvents ListBox1 As ListBox
-    Friend WithEvents TabPage2 As TabPage
+    Friend WithEvents tabImageList As TabPage
     Friend WithEvents lstThumbs As ListView
     Friend WithEvents ilstBMThumbs As ImageList
     Friend WithEvents btnBookMarkAdd As Button
     Friend WithEvents btnBookMarkDel As Button
     Friend WithEvents btnBookMarkUpdate As Button
+    Friend WithEvents TableLayoutPanel1 As TableLayoutPanel
+    Friend WithEvents chkZoku11 As CheckBox
+    Friend WithEvents chkZoku12 As CheckBox
+    Friend WithEvents chkZoku13 As CheckBox
+    Friend WithEvents chkZoku14 As CheckBox
+    Friend WithEvents chkZoku15 As CheckBox
 End Class

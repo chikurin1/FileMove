@@ -141,6 +141,24 @@ Public Class FormView
     End Sub
 
 
+    '☆暫定☆
+    Public Sub ImageGet(ByVal sFilePath As String, ByRef image As Image, ByRef sFirstFile As String)
+
+        Dim clsZipOpen As ZipOpen
+
+        'コンストラクタでファイルパスを指定
+        clsZipOpen = New ZipOpen(sFilePath)
+        clsZipOpen.tagCreate(clsZipOpen.FileName)
+
+        'イメージを取得し、フォームに設定
+        image = clsZipOpen.Thumbs
+
+        sFirstFile = clsZipOpen.FirstFile
+
+
+    End Sub
+
+
     Public Sub ShowBookMark(ByVal bDataFlag As Boolean)
         If bDataFlag = True Then
 

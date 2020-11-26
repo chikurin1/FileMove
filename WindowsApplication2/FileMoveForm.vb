@@ -68,7 +68,8 @@ Public Class FileMoveForm
     Private imgBlack As System.Drawing.Image = System.Drawing.Image.FromFile("C:\ProgramData\NeeView\Plugin\星黒.png")
 
 
-
+    '☆暫定☆
+    Private sFirstFile As String
 
 
     '************************************************************************************************************************************************************************************
@@ -1424,6 +1425,8 @@ Public Class FileMoveForm
             clsFormView.ShowBookMark(True)
         End If
 
+        '☆暫定☆
+        sFirstFile = clsFormBean.first_file
 
     End Sub
 
@@ -1453,14 +1456,21 @@ Public Class FileMoveForm
         clsFormView.FormSet(clsBookMarkBean)
 
         clsFormView.BtnBookMarkUpdateMode()
+
+        '☆暫定☆
+        sFirstFile = ""
+
     End Sub
 
     'フォームのサムネイルクリック
     'NeeViewを起動
     Private Sub picThumbs_Click(sender As Object, e As System.EventArgs) Handles picThumbs.Click
 
-        Process.Start("C:\ProgramData\NeeView\NeeView.exe", """" & lblFilePath.Text & """")
-
+        If sFirstFile = "" Then
+            Process.Start("C:\ProgramData\NeeView\NeeView.exe", """" & lblFilePath.Text & """")
+        Else
+            Process.Start("C:\ProgramData\NeeView\NeeView.exe", """" & lblFilePath.Text & "\" & sFirstFile & """")
+        End If
     End Sub
 
     '☆マウスオーバーイベント

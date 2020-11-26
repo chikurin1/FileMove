@@ -118,6 +118,18 @@ Public Class FormBean
             _file_name = value
         End Set
     End Property
+
+    '☆暫定☆
+    Private _first_file As String
+    Public Property first_file() As String
+        Get
+            Return _first_file
+        End Get
+        Set(ByVal value As String)
+            _first_file = value
+        End Set
+    End Property
+
     Public Overridable Sub getZipData(ByVal sFilePath As String)
 
         Dim clsZipOpen As ZipOpen
@@ -180,7 +192,10 @@ Public Class FormBean
 
         Dim clsFormView As New FormView
         'サムネイルを設定
-        clsFormView.ImageGet(sFilePath, thumbnail)
+        '☆暫定☆
+        clsFormView.ImageGet(sFilePath, thumbnail, first_file)
+        '暫定解除後は↓を正とする
+        'clsFormView.ImageGet(sFilePath, thumbnail)
 
         'カレントファイル、フォルダを変数に格納
         While (readerFilePath.Read())

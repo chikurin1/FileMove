@@ -9,6 +9,15 @@
     Private sBookMarkDir As String
     Private sBookMarkFile As String
 
+    '暫定
+    Private sFirstFile As String
+
+    Public ReadOnly Property FirstFile() As String
+        Get
+            Return sFirstFile
+        End Get
+    End Property
+
     'value:zipファイル
     Public Sub New(ByVal value As String)
         sFilePath = value
@@ -78,6 +87,9 @@
 
             '情報を表示する 
             If ze.IsFile Then
+
+                '☆暫定☆
+                sFirstFile = ze.Name
 
                 'ファイルのとき 
                 '閲覧するZIPエントリのStreamを取得 

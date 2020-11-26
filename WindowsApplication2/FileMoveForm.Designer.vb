@@ -627,9 +627,11 @@ Partial Class FileMoveForm
         '
         Me.lstBookMark.Dock = System.Windows.Forms.DockStyle.Fill
         Me.lstBookMark.HideSelection = False
-        Me.lstBookMark.Location = New System.Drawing.Point(3, 329)
+        Me.lstBookMark.Location = New System.Drawing.Point(0, 332)
+        Me.lstBookMark.Margin = New System.Windows.Forms.Padding(0)
         Me.lstBookMark.Name = "lstBookMark"
-        Me.lstBookMark.Size = New System.Drawing.Size(999, 126)
+        Me.lstBookMark.Size = New System.Drawing.Size(1005, 126)
+        Me.lstBookMark.SmallImageList = Me.ilstBMThumbs
         Me.lstBookMark.TabIndex = 0
         Me.lstBookMark.UseCompatibleStateImageBehavior = False
         '
@@ -641,10 +643,12 @@ Partial Class FileMoveForm
         Me.TabControl1.Controls.Add(Me.tabTree)
         Me.TabControl1.Controls.Add(Me.tabImageList)
         Me.TabControl1.Controls.Add(Me.tabGoogle)
-        Me.TabControl1.Location = New System.Drawing.Point(3, 3)
+        Me.TabControl1.Location = New System.Drawing.Point(0, 0)
+        Me.TabControl1.Margin = New System.Windows.Forms.Padding(0)
         Me.TabControl1.Name = "TabControl1"
+        Me.TabControl1.Padding = New System.Drawing.Point(0, 0)
         Me.TabControl1.SelectedIndex = 0
-        Me.TabControl1.Size = New System.Drawing.Size(999, 320)
+        Me.TabControl1.Size = New System.Drawing.Size(1005, 332)
         Me.TabControl1.TabIndex = 0
         '
         'tabTree
@@ -653,7 +657,7 @@ Partial Class FileMoveForm
         Me.tabTree.Location = New System.Drawing.Point(4, 22)
         Me.tabTree.Name = "tabTree"
         Me.tabTree.Padding = New System.Windows.Forms.Padding(3)
-        Me.tabTree.Size = New System.Drawing.Size(991, 294)
+        Me.tabTree.Size = New System.Drawing.Size(997, 306)
         Me.tabTree.TabIndex = 0
         Me.tabTree.Text = "フォルダ"
         Me.tabTree.UseVisualStyleBackColor = True
@@ -664,17 +668,18 @@ Partial Class FileMoveForm
         Me.treeDir.Font = New System.Drawing.Font("メイリオ", 9.0!, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, CType(128, Byte))
         Me.treeDir.ForeColor = System.Drawing.SystemColors.WindowText
         Me.treeDir.Location = New System.Drawing.Point(3, 3)
+        Me.treeDir.Margin = New System.Windows.Forms.Padding(0)
         Me.treeDir.Name = "treeDir"
-        Me.treeDir.Size = New System.Drawing.Size(985, 288)
+        Me.treeDir.Size = New System.Drawing.Size(991, 300)
         Me.treeDir.TabIndex = 16
         '
         'tabImageList
         '
         Me.tabImageList.Controls.Add(Me.lstThumbs)
         Me.tabImageList.Location = New System.Drawing.Point(4, 22)
+        Me.tabImageList.Margin = New System.Windows.Forms.Padding(0)
         Me.tabImageList.Name = "tabImageList"
-        Me.tabImageList.Padding = New System.Windows.Forms.Padding(3)
-        Me.tabImageList.Size = New System.Drawing.Size(991, 294)
+        Me.tabImageList.Size = New System.Drawing.Size(997, 306)
         Me.tabImageList.TabIndex = 1
         Me.tabImageList.Text = "検索結果"
         Me.tabImageList.UseVisualStyleBackColor = True
@@ -682,14 +687,15 @@ Partial Class FileMoveForm
         'lstThumbs
         '
         Me.lstThumbs.BackColor = System.Drawing.SystemColors.Window
+        Me.lstThumbs.Cursor = System.Windows.Forms.Cursors.Default
         Me.lstThumbs.Dock = System.Windows.Forms.DockStyle.Fill
         Me.lstThumbs.Font = New System.Drawing.Font("メイリオ", 9.0!, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, CType(128, Byte))
         Me.lstThumbs.HideSelection = False
-        Me.lstThumbs.Location = New System.Drawing.Point(3, 3)
+        Me.lstThumbs.Location = New System.Drawing.Point(0, 0)
+        Me.lstThumbs.Margin = New System.Windows.Forms.Padding(0)
         Me.lstThumbs.Name = "lstThumbs"
         Me.lstThumbs.ShowItemToolTips = True
-        Me.lstThumbs.Size = New System.Drawing.Size(985, 288)
-        Me.lstThumbs.SmallImageList = Me.ilstThumbs
+        Me.lstThumbs.Size = New System.Drawing.Size(997, 306)
         Me.lstThumbs.TabIndex = 28
         Me.lstThumbs.UseCompatibleStateImageBehavior = False
         '
@@ -698,7 +704,7 @@ Partial Class FileMoveForm
         Me.tabGoogle.Controls.Add(Me.WebBrowser1)
         Me.tabGoogle.Location = New System.Drawing.Point(4, 22)
         Me.tabGoogle.Name = "tabGoogle"
-        Me.tabGoogle.Size = New System.Drawing.Size(991, 294)
+        Me.tabGoogle.Size = New System.Drawing.Size(997, 300)
         Me.tabGoogle.TabIndex = 2
         Me.tabGoogle.Text = "google"
         Me.tabGoogle.UseVisualStyleBackColor = True
@@ -709,7 +715,7 @@ Partial Class FileMoveForm
         Me.WebBrowser1.Location = New System.Drawing.Point(0, 0)
         Me.WebBrowser1.MinimumSize = New System.Drawing.Size(20, 20)
         Me.WebBrowser1.Name = "WebBrowser1"
-        Me.WebBrowser1.Size = New System.Drawing.Size(991, 294)
+        Me.WebBrowser1.Size = New System.Drawing.Size(997, 300)
         Me.WebBrowser1.TabIndex = 0
         Me.WebBrowser1.Url = New System.Uri("about:blank", System.UriKind.Absolute)
         '
@@ -758,15 +764,15 @@ Partial Class FileMoveForm
             Or System.Windows.Forms.AnchorStyles.Left) _
             Or System.Windows.Forms.AnchorStyles.Right), System.Windows.Forms.AnchorStyles)
         Me.TableLayoutPanel1.ColumnCount = 1
-        Me.TableLayoutPanel1.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 50.0!))
+        Me.TableLayoutPanel1.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100.0!))
         Me.TableLayoutPanel1.Controls.Add(Me.lstBookMark, 0, 1)
         Me.TableLayoutPanel1.Controls.Add(Me.TabControl1, 0, 0)
         Me.TableLayoutPanel1.Location = New System.Drawing.Point(0, 262)
         Me.TableLayoutPanel1.Margin = New System.Windows.Forms.Padding(0)
         Me.TableLayoutPanel1.Name = "TableLayoutPanel1"
         Me.TableLayoutPanel1.RowCount = 2
-        Me.TableLayoutPanel1.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 71.39738!))
-        Me.TableLayoutPanel1.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 28.60262!))
+        Me.TableLayoutPanel1.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100.0!))
+        Me.TableLayoutPanel1.RowStyles.Add(New System.Windows.Forms.RowStyle())
         Me.TableLayoutPanel1.Size = New System.Drawing.Size(1005, 458)
         Me.TableLayoutPanel1.TabIndex = 59
         '

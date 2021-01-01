@@ -191,6 +191,55 @@ Public Class FormBean
         End Try
 
         Dim clsFormView As New FormView
+
+        'カレントファイル、フォルダを変数に格納
+        While (readerFilePath.Read())
+            file_id = readerFilePath.GetValue(0)
+            folder_id = readerFilePath.GetValue(6)
+
+            'パス、タイトル、ファイルサイズ設定
+            fullpath = sFilePath
+            title = readerFilePath.GetString(1)
+            file_size = ChangeFileSize(readerFilePath.GetValue(3))
+            folder_name = readerFilePath.GetString(7)
+
+            'サムネイルを設定
+            Dim blob As OracleBlob = readerFilePath.GetOracleBlob(4)
+            Dim ms As New System.IO.MemoryStream(blob.Value)
+            thumbnail = Image.FromStream(ms)
+
+            'ランクを設定
+            rank = readerFilePath.GetValue(5)
+
+        End While
+
+        Dim clsZipOpen As New ZipOpen
+
+        'タグ取得
+        setTagData(file_id, tagname_lst, tagcat_lst, 1)
+
+    End Sub
+
+
+    Public Overridable Sub getOraDataImageChange(ByVal sFilePath As String)
+
+        Dim clsOraAccess As OraAccess
+        'DBアクセス用クラスのインスタンスを作成
+        clsOraAccess = New OraAccess()
+
+        Dim readerFilePath As OracleDataReader = Nothing
+
+        Console.WriteLine("DBからフォーム情報取得開始")
+
+        Try
+            'パスからファイル情報を取得
+            clsOraAccess.queryFilePath(sFilePath, readerFilePath)
+
+        Catch ex As Exception
+            MsgBox(ex.Message)
+        End Try
+
+        Dim clsFormView As New FormView
         'サムネイルを設定
         '☆暫定☆
         clsFormView.ImageGet(sFilePath, thumbnail, first_file)

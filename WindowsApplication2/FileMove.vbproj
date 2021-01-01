@@ -121,6 +121,7 @@
     <Compile Include="Bean\BookMarkBean.vb" />
     <Compile Include="Bean\FormBean.vb" />
     <Compile Include="Bean\ImageListBean.vb" />
+    <Compile Include="Util\NeeViewWorks.vb" />
     <Compile Include="View\FormView.vb" />
     <Compile Include="DBLogic.vb" />
     <Compile Include="FileMoveForm.vb">

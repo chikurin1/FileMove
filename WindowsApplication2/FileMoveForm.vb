@@ -60,17 +60,16 @@ Public Class FileMoveForm
     ''' <summary>
     ''' ランキング用の☆マーク（白抜き）
     ''' </summary>
-    Private imgWhite As System.Drawing.Image = System.Drawing.Image.FromFile("C:\ProgramData\NeeView\Plugin\星白.png")
+    Private imgWhite As Image = Image.FromFile("C:\ProgramData\NeeView\Plugin\星白.png")
 
     ''' <summary>
     ''' ''' ランキング用の☆マーク（黒埋め）
     ''' </summary>
-    Private imgBlack As System.Drawing.Image = System.Drawing.Image.FromFile("C:\ProgramData\NeeView\Plugin\星黒.png")
+    Private imgBlack As Image = Image.FromFile("C:\ProgramData\NeeView\Plugin\星黒.png")
 
 
     '☆暫定☆
-    Private sFirstFile As String
-
+    Private bBookMarkFlag As Boolean
 
     '************************************************************************************************************************************************************************************
     '************************************************************************************************************************************************************************************
@@ -130,7 +129,9 @@ Public Class FileMoveForm
             bStartFlag = True
         End If
 
+        '変数初期化
         iRank = 1
+        bBookMarkFlag = False
 
         'コマンドライン引数が未設定の場合、ツリービューを作成し処理終了。
         If sFilePath Is Nothing Then
@@ -259,14 +260,14 @@ Public Class FileMoveForm
                     clsFormView.BtnBookMarkAddMode()
 
                 Else
-                    Console.WriteLine("'zip追加モード：" & sFilePath)
+                    Console.WriteLine("'zip更新モード：" & sFilePath)
 
 
                     'ファイル表示処理
                     'ファイルTBLから取得した情報をもとにフォーム、ツリービュー設定
 
                     'フォーム生成
-                    clsFormBean.getOraData(sFilePath)
+                    clsFormBean.getOraDataImageChange(sFilePath)
 
                     'フォームにBeanの値を設定
                     clsFormView.FormSet(clsFormBean)
@@ -336,9 +337,9 @@ Public Class FileMoveForm
                         Dim sName As String = txtTagSetting.Text
                         If (sName <> "") Then
                             TabControl1.SelectedTab = tabGoogle
-                            WebBrowser1.Navigate(New Uri("https://www.google.co.jp/search?q=" & Uri.EscapeUriString(sName.Trim)))
-                            'Process.Start("https://www.google.co.jp/search?q=" & Uri.EscapeUriString(sName.Trim))
-                        End If
+                        WebBrowser1.Navigate(New Uri("https://www.google.co.jp/search?q=" & Uri.EscapeUriString(sName.Replace("_", " ").Trim)))
+                        'Process.Start("https://www.google.co.jp/search?q=" & Uri.EscapeUriString(sName.Trim))
+                    End If
                     End If
 
                     'txtFileName.Focus()
@@ -532,7 +533,7 @@ Public Class FileMoveForm
         If e.Button = MouseButtons.Right AndAlso e.Clicks = 2 Then
 
             ClearCheckBox(Me)
-            iRank = 1
+            iRank = 2
             RankImageChange(iRank)
 
         End If
@@ -1325,6 +1326,7 @@ Public Class FileMoveForm
 
         'txtFileName.Focus()
         TabControl1.Focus()
+        TabControl1.SelectedTab = tabTree
 
     End Sub
 
@@ -1341,7 +1343,7 @@ Public Class FileMoveForm
         Dim sName As String = txtTagSetting.Text
         If (sName <> "") Then
             TabControl1.SelectedTab = tabGoogle
-            WebBrowser1.Navigate(New Uri("https://www.google.co.jp/search?q=" & Uri.EscapeUriString(sName.Trim)))
+            WebBrowser1.Navigate(New Uri("https://www.google.co.jp/search?q=" & Uri.EscapeUriString(sName.Replace("_", " ").Trim)))
         End If
     End Sub
 
@@ -1387,7 +1389,7 @@ Public Class FileMoveForm
 
         Dim itemx As ListViewItem = sender.SelectedItems(0)
         'sFilePath = itemx.SubItems(1).Text
-
+        'Console.WriteLine(itemx.SubItems(1).Text)
         Dim clsFormView As New FormView(Me)
 
         'タグやチェックをクリア
@@ -1405,6 +1407,9 @@ Public Class FileMoveForm
 
         'ファイルIDを設定
         iNowFile = clsFormBean.file_id
+
+        'ランクを設定
+        iRank = clsFormBean.rank
 
         '更新モードでボタンを設定
         clsFormView.BtnUpdateMode()
@@ -1425,10 +1430,85 @@ Public Class FileMoveForm
             clsFormView.ShowBookMark(True)
         End If
 
-        '☆暫定☆
-        sFirstFile = clsFormBean.first_file
+        bBookMarkFlag = False
 
     End Sub
+
+
+    'イメージリスト右ダブルクリック時のイベント
+    Private Sub lstThumbs_RightDoubleClick(ByVal sender As System.Object, ByVal e As System.Windows.Forms.MouseEventArgs) Handles lstThumbs.MouseDown
+
+        'マウスのダブルクリックイベント
+        If e.Button = MouseButtons.Right AndAlso e.Clicks = 2 Then
+
+            If sender.SelectedItems.count = 0 Then
+                Exit Sub
+            End If
+
+            Dim itemx As ListViewItem = sender.SelectedItems(0)
+            'sFilePath = itemx.SubItems(1).Text
+
+            Dim clsFormView As New FormView(Me)
+
+            'タグやチェックをクリア
+            clsFormView.DataClear()
+
+            'DBからフォーム情報を取得しBeanにセット
+            Dim clsFormBean As New FormBean
+            clsFormBean.getOraData(itemx.SubItems(1).Text)
+
+            'フォームにBeanの値を設定
+            clsFormView.FormSet(clsFormBean)
+
+            'フォルダIDを設定
+            iNowFolder = clsFormBean.folder_id
+
+            'ファイルIDを設定
+            iNowFile = clsFormBean.file_id
+
+            'ランクを設定
+            iRank = clsFormBean.rank
+
+            '更新モードでボタンを設定
+            clsFormView.BtnUpdateMode()
+
+            TabControl1.Focus()
+
+            'ブックマークリストを設定
+            Dim clsBookMarkBean As New BookMarkBean
+            clsBookMarkBean.getOraDataList(clsFormBean.file_id)
+
+            'ブックマークリストを取得できた場合、ブックマークリストを表示
+            If clsBookMarkBean.bookmark_imageListBeans.Count = 0 Then
+                clsFormView.ShowBookMark(False)
+            Else
+                Dim clsBookMarkImageListView As New BookMarkImateListView(Me)
+                clsBookMarkImageListView.BookMarkImageListCreate(clsBookMarkBean.bookmark_imageListBeans)
+
+                clsFormView.ShowBookMark(True)
+            End If
+
+
+            'Process.Start("C:\ProgramData\NeeView\NeeView.exe", """" & lblFilePath.Text & "\" & sFirstFile & """")
+
+            If bBookMarkFlag = True Then
+                Process.Start("C:\ProgramData\NeeView\NeeView.exe", """" & lblFilePath.Text & """")
+            Else
+
+                Dim sAllPath As String = Nothing
+                Dim clsNeeViewWorks As New NeeViewWorks
+
+                clsNeeViewWorks.ScriptCreate(lblFilePath.Text, lstThumbs)
+                clsNeeViewWorks.KidouHikisuuCreate(lstThumbs, lblFilePath.Text, sAllPath)
+                clsNeeViewWorks = Nothing
+
+                Process.Start("C:\ProgramData\NeeView\NeeView.exe", sAllPath)
+
+            End If
+
+        End If
+    End Sub
+
 
     ''' <summary>
     ''' ブックマークのイメージリストクリック
@@ -1457,8 +1537,48 @@ Public Class FileMoveForm
 
         clsFormView.BtnBookMarkUpdateMode()
 
-        '☆暫定☆
-        sFirstFile = ""
+        bBookMarkFlag = True
+
+    End Sub
+
+
+    ''' <summary>
+    ''' ブックマークイメージリストの右ダブルクリック
+    ''' </summary>
+    ''' <param name="sender"></param>
+    ''' <param name="e"></param>
+    Private Sub lstBookMark_RightDoubleClick(sender As Object, ByVal e As System.Windows.Forms.MouseEventArgs) Handles lstBookMark.MouseDown
+        'マウスのダブルクリックイベント
+        If e.Button = MouseButtons.Right AndAlso e.Clicks = 2 Then
+
+            If sender.SelectedItems.count = 0 Then
+                Exit Sub
+            End If
+
+            Dim sFilePath As String = lblFilePath.Text
+
+            sFilePath = lstBookMark.SelectedItems(0).SubItems(1).Text
+
+            If (bKensakuPattern = True) Then
+                'いったんコメント
+                'iNowFolder = lstBookMarkPath(4)(lstBookMark.SelectedItems(0).Index)
+                lblNowFolder.Text = "同一"
+            End If
+
+            Dim clsBookMarkBean As New BookMarkBean
+            'ブックマークテーブルにデータがある場合、TBLからフォームデータを取得しBeanにセット
+            clsBookMarkBean.getOraData(sFilePath)
+
+            Dim clsFormView As New FormView(Me)
+            'Beanからフォーム生成
+            clsFormView.FormSet(clsBookMarkBean)
+
+            clsFormView.BtnBookMarkUpdateMode()
+
+            bBookMarkFlag = True
+
+            Process.Start("C:\ProgramData\NeeView\NeeView.exe", """" & lblFilePath.Text & """")
+        End If
 
     End Sub
 
@@ -1466,15 +1586,23 @@ Public Class FileMoveForm
     'NeeViewを起動
     Private Sub picThumbs_Click(sender As Object, e As System.EventArgs) Handles picThumbs.Click
 
-        If sFirstFile = "" Then
+        If bBookMarkFlag = True Then
             Process.Start("C:\ProgramData\NeeView\NeeView.exe", """" & lblFilePath.Text & """")
         Else
-            Process.Start("C:\ProgramData\NeeView\NeeView.exe", """" & lblFilePath.Text & "\" & sFirstFile & """")
+
+            Dim sAllPath As String = Nothing
+            Dim clsNeeViewWorks As New NeeViewWorks
+
+            clsNeeViewWorks.ScriptCreate(lblFilePath.Text, lstThumbs)
+            clsNeeViewWorks.KidouHikisuuCreate(lstThumbs, lblFilePath.Text, sAllPath)
+            clsNeeViewWorks = Nothing
+
+            Process.Start("C:\ProgramData\NeeView\NeeView.exe", sAllPath)
         End If
     End Sub
 
     '☆マウスオーバーイベント
-    '☆のイメージを変更し、ランクの値を更新する。
+    '☆のイメージを変更し、ランクの値を更新する。System.ComponentModel.Win32Exception: 
     Private Sub picRank_Click(sender As Object, e As EventArgs) Handles picRank0.MouseLeave, picRank1.MouseHover, picRank2.MouseHover, picRank3.MouseHover, picRank4.MouseHover, picRank5.MouseHover
 
 
@@ -1718,7 +1846,7 @@ Public Class FileMoveForm
         Dim sName As String = txtTagSetting.Text
         If (sName <> "") Then
             TabControl1.SelectedTab = tabGoogle
-            WebBrowser1.Navigate(New Uri("https://www.google.co.jp/search?q=" & Uri.EscapeUriString(sName.Trim)))
+            WebBrowser1.Navigate(New Uri("https://www.google.co.jp/search?q=" & Uri.EscapeUriString(sName.Replace("_", " ").Trim)))
         End If
 
     End Sub
@@ -1752,7 +1880,6 @@ Public Class FileMoveForm
         Next
 
     End Sub
-
 
 End Class
 

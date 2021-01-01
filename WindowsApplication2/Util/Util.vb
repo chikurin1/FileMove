@@ -145,9 +145,11 @@ Module Util
             If TypeOf cControl Is CheckBox Then
                 Dim chk As CheckBox
                 chk = cControl
-                If (chk.Name <> "chkOver") Then
-                    chk.Checked = False
-                End If
+                Select Case chk.Name
+                    Case "chkOver", "chkGoogle"
+                    Case Else
+                        chk.Checked = False
+                End Select
             End If
         Next cControl
     End Sub

@@ -392,6 +392,7 @@ Public Class OraAccess
         End If
 
         If (i > 0) Then
+            sZokuCondition = sZokuCondition & " order by T.RANK desc "
             sFileListQuery = "with tmp as ( " & sFileListQuery
             sFileListQuery = sFileListQuery & ")" & sZokuCondition
         End If

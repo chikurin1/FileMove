@@ -80,6 +80,20 @@ Public Class ImageListBean
         End Set
     End Property
 
+    Public Function getPathAll() As String
+
+        Dim sPathAll As String = Nothing
+
+        For Each imageBean In _imageListBeans
+
+            sPathAll = sPathAll & imageBean.fullpath
+
+        Next
+
+        Return sPathAll
+
+    End Function
+
 
     'フォルダID検索
     Public Sub getOraData(ByVal iFolderId As Integer, ByVal iRank As Integer, ByRef lstZokusei As List(Of String))

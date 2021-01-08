@@ -221,6 +221,7 @@ Public Class FileMoveForm
                     clsFormBean.getOraData(sFilePath)
                     iNowFile = clsFormBean.file_id
                     iNowFolder = clsFormBean.folder_id
+                    iRank = clsFormBean.rank
 
                     'フォーム生成
                     '絞込み条件をタグから取得()
@@ -274,6 +275,7 @@ Public Class FileMoveForm
 
                     iNowFile = clsFormBean.file_id
                     iNowFolder = clsFormBean.folder_id
+                    iRank = clsFormBean.rank
 
                     '更新モードでボタンを設定
                     clsFormView.BtnUpdateMode()

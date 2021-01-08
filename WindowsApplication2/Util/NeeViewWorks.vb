@@ -40,13 +40,14 @@
 
                 arrayData.Add("if(!nv.Values.nv" & dt1.ToString("yyyyMMddHHmmss") & "){ ")
 
-
                 If Not lstView.Items.Count = 1 Then
 
                     If lstView.Items.Count - 1 = ii Then
+                        arrayData.Add("if(nv.Bookshelf.Items.filter(e => e.Name.startsWith('" & lstView.Items(ii - 1).SubItems(0).Text & "'))!=''){")
                         arrayData.Add("nv.Bookshelf.SelectedItems = nv.Bookshelf.Items.filter(e => e.Name.startsWith('" & lstView.Items(ii - 1).SubItems(0).Text & ".zip'))")
                         arrayData.Add("nv.Command.NextBook.Execute()")
                     Else
+                        arrayData.Add("if(nv.Bookshelf.Items.filter(e => e.Name.startsWith('" & lstView.Items(ii + 1).SubItems(0).Text & "'))!=''){")
                         arrayData.Add("nv.Bookshelf.SelectedItems = nv.Bookshelf.Items.filter(e => e.Name.startsWith('" & lstView.Items(ii + 1).SubItems(0).Text & ".zip'))")
                         arrayData.Add("nv.Command.PrevBook.Execute()")
 
@@ -59,7 +60,14 @@
                 arrayData.Add("}")
                 arrayData.Add("sleep(100)")
                 arrayData.Add("}")
+                arrayData.Add("for (let ii = 0; ii < 10; ii++) {")
                 arrayData.Add("nv.Command.FirstPage.Execute()")
+                arrayData.Add("if(nv.Book.Pages[0].Path == nv.Book.ViewPages[0].Path){")
+                arrayData.Add("break")
+                arrayData.Add("}")
+                arrayData.Add("sleep(100)")
+                arrayData.Add("}")
+                arrayData.Add("}")
                 arrayData.Add("}")
                 arrayData.Add("nv.Values.nv" & dt1.ToString("yyyyMMddHHmmss") & "= true")
 
